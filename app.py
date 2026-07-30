@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta
+import os
 import random
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_mail import Mail, Message
@@ -8,7 +9,10 @@ import sqlalchemy
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'clave_secreta_super_segura'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///prestamos.db'
+
+# Ajuste seguro de la ruta de la base de datos para entornos en la nube (Render)
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'prestamos.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Configuración de Correo (Opcional)
@@ -228,7 +232,6 @@ def dashboard():
 
     capital_prestado = db.session.query(db.func.sum(Prestamo.capital_inicial)).filter_by(estado='Activo').scalar() or 0.0
 
-    # Calcular el rendimiento proyectado (total de intereses esperados de préstamos activos)
     prestamos_activos_lista = Prestamo.query.filter_by(estado='Activo').all()
     total_interes_proyectado = sum(p.capital_inicial * (p.tasa_interes / 100.0) * p.cuotas_totales for p in prestamos_activos_lista)
 
@@ -240,7 +243,6 @@ def dashboard():
         or 0.0
     )
 
-    # Cálculo dinámico de ingresos mensuales reales por pagos
     ingresos_meses = [0.0] * 12
     todos_los_pagos = Pago.query.all()
     for p in todos_los_pagos:
@@ -337,6 +339,7 @@ def prestamos():
         cobros_hoy=cobros_hoy,
         clientes_count=clientes_count
     )
+
 
 @app.route('/nuevo_prestamo', methods=['POST'])
 def nuevo_prestamo():
