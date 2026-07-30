@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Verificar Correo - Sistema de Préstamos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 flex items-center justify-center h-screen">
+
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center">
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">Verifica tu Correo</h1>
+        <p class="text-sm text-gray-500 mb-6">Ingresa el código de 6 dígitos que se te proporcionó:</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="mb-4 p-3 rounded-lg text-sm {% if category == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %} font-medium">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% if not bloqueado %}
+        <!-- Formulario corregido con url_for -->
+        <form action="{{ url_for('verificar') }}" method="POST">
+            <div class="mb-4">
+                <input type="text" name="codigo" maxlength="6" required placeholder="123456" class="w-full text-center tracking-widest text-2xl font-bold px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600">
+            </div>
+            <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-2 rounded-lg hover:bg-indigo-700 transition mb-4">Verificar Código</button>
+        </form>
+
+        <!-- Botón de Reenvío con Cuenta Regresiva (Corregido con url_for) -->
+        <form action="{{ url_for('reenviar_codigo') }}" method="POST">
+            <button type="submit" id="btn-reenviar" disabled class="w-full bg-gray-300 text-gray-500 font-bold py-2 rounded-lg cursor-not-allowed transition text-sm">
+                Reenviar Código (<span id="timer">60</span>s)
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <script>
+        let timeLeft = 60;
+        const timerElement = document.getElementById('timer');
+        const btnReenviar = document.getElementById('btn-reenviar');
+
+        if (timerElement && btnReenviar) {
+            const countdown = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    btnReenviar.disabled = false;
+                    btnReenviar.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+                    btnReenviar.classList.add('bg-indigo-100', 'text-indigo-700', 'hover:bg-indigo-200');
+                    btnReenviar.innerHTML = "Reenviar Código";
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

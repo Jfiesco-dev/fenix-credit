@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Módulo de Préstamos - Fenix Credit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 font-sans flex h-screen overflow-hidden">
+
+<aside class="w-80 bg-slate-900 text-white flex flex-col justify-between hidden md:flex shadow-2xl z-20 shrink-0">
+    <div>
+        <!-- Cabecera del Sidebar -->
+        <div class="flex items-center gap-3.5 px-6 py-6 border-b border-slate-800">
+            <div class="w-11 h-11 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-lg font-bold shadow-lg shadow-indigo-600/30">
+                <i class="fa-solid fa-vault"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-extrabold tracking-tight">Fenix Credit</h1>
+                <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">Versión Libre</span>
+            </div>
+        </div>
+
+        <!-- Navegación con los botones y la Calculadora al final -->
+<nav class="p-4 space-y-1.5 overflow-y-auto max-h-[calc(100vh-160px)]">
+    <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'dashboard' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-chart-pie w-4 text-center"></i> Dashboard
+    </a>
+    <a href="{{ url_for('clientes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'clientes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-users w-4 text-center"></i> Clientes
+    </a>
+    <a href="{{ url_for('prestamos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'prestamos' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-hand-holding-dollar w-4 text-center"></i> Préstamos
+    </a>
+    <a href="{{ url_for('pagos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'pagos' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-receipt w-4 text-center"></i> Pagos
+    </a>
+    <a href="{{ url_for('cobranza') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'cobranza' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-comments-dollar w-4 text-center"></i> Cobranza
+    </a>
+    <a href="{{ url_for('solicitudes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'solicitudes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-file-circle-plus w-4 text-center"></i> Solicitudes
+    </a>
+    <a href="{{ url_for('rutas') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'rutas' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-route w-4 text-center"></i> Rutas
+    </a>
+    <a href="{{ url_for('contratos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'contratos' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-file-contract w-4 text-center"></i> Contratos
+    </a>
+    <a href="{{ url_for('caja') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'caja' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-wallet w-4 text-center"></i> Caja
+    </a>
+    <a href="{{ url_for('reportes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'reportes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-chart-line w-4 text-center"></i> Reportes
+    </a>
+    <!-- Botón de Calculadora debajo de Reportes -->
+    <button onclick="toggleModalCalculadora()" class="w-full flex items-center gap-3.5 px-4 py-3.5 text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl font-semibold text-xs transition-all duration-200 text-left">
+        <i class="fa-solid fa-calculator w-4 text-center text-blue-400"></i> Calculadora
+    </button>
+</nav>
+    </div>
+
+    <div class="p-5 border-t border-slate-800 flex items-center justify-between">
+        <span class="text-[11px] text-slate-400 font-semibold">Sistema Ilimitado</span>
+        <a href="{{ url_for('login') }}" class="text-red-400 hover:text-red-300 p-2 rounded-lg transition" title="Cerrar Sesión">
+            <i class="fa-solid fa-right-from-bracket text-xs"></i>
+        </a>
+    </div>
+</aside>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 flex flex-col h-screen overflow-y-auto">
+        <header class="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center shadow-sm">
+            <h2 class="text-xl font-bold text-gray-800">Módulo de Préstamos</h2>
+            <div class="flex items-center gap-3">
+                <span class="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-full border border-indigo-100">Versión Ilimitada Gratuita</span>
+                <div class="w-9 h-9 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-sm">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+            </div>
+        </header>
+
+        <div class="p-8 max-w-7xl mx-auto w-full space-y-8">
+
+            <!-- Alertas Flash -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="p-4 rounded-xl text-sm {% if category == 'success' %}bg-green-50 text-green-700 border border-green-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %} font-medium">
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <!-- Tarjetas de Estadísticas Reales -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Préstamos Activos</p>
+                        <h3 class="text-2xl font-extrabold text-gray-800 mt-0.5">{{ prestamos_activos }}</h3>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-sack-dollar"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Capital Prestado</p>
+                        <h3 class="text-2xl font-extrabold text-gray-800 mt-0.5">${{ "{:,.2f}".format(capital_prestado) }}</h3>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-wallet"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Cobros de Hoy</p>
+                        <h3 class="text-2xl font-extrabold text-gray-800 mt-0.5">${{ "{:,.2f}".format(cobros_hoy) }}</h3>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Clientes Registrados</p>
+                        <h3 class="text-2xl font-extrabold text-gray-800 mt-0.5">{{ clientes_count }}</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla y Botón Nuevo Préstamo -->
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800">Préstamos Recientes</h3>
+                        <p class="text-sm text-gray-400">Gestiona y monitorea los créditos otorgados</p>
+                    </div>
+                    <button onclick="abrirModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm shadow-lg shadow-indigo-600/20 transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Nuevo Préstamo
+                    </button>
+                </div>
+
+                {% if prestamos %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-gray-100 text-xs font-bold text-gray-400 uppercase">
+                                <th class="pb-3">ID / Cliente</th>
+                                <th class="pb-3">Capital</th>
+                                <th class="pb-3">Tasa %</th>
+                                <th class="pb-3">Cuotas</th>
+                                <th class="pb-3">Modalidad</th>
+                                <th class="pb-3">Próximo Pago</th>
+                                <th class="pb-3">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50 text-sm">
+                            {% for p in prestamos %}
+                            <tr class="hover:bg-slate-50 transition">
+                                <td class="py-3 font-semibold text-gray-800">
+                                    <a href="{{ url_for('detalle_prestamo', id=p.id) }}" class="text-indigo-600 hover:underline">
+                                        #{{ p.id }}
+                                    </a> 
+                                    <span class="text-gray-500 font-normal block text-xs">{{ p.cliente.nombre }}</span>
+                                </td>
+                                <td class="py-3 text-gray-600">${{ "{:,.2f}".format(p.capital_inicial) }}</td>
+                                <td class="py-3 text-gray-600">{{ p.tasa_interes }}%</td>
+                                <td class="py-3 text-gray-600">{{ p.cuotas_totales }}</td>
+                                <td class="py-3 text-gray-600">{{ p.modalidad }}</td>
+                                <td class="py-3 text-gray-600">{{ p.proximo_pago }}</td>
+                                <td class="py-3">
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700">{{ p.estado }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="border border-gray-100 rounded-xl overflow-hidden text-center py-12">
+                    <div class="w-16 h-16 bg-gray-50 text-gray-300 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </div>
+                    <p class="text-gray-500 font-medium text-sm">No hay préstamos registrados todavía.</p>
+                    <p class="text-gray-400 text-xs mt-1">Crea tu primer préstamo para empezar a visualizar el balance.</p>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal Nuevo Préstamo -->
+    <div id="modal-prestamo" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative border border-gray-100">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="text-lg font-bold text-gray-800">Registrar Nuevo Préstamo</h3>
+                <button onclick="cerrarModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form action="{{ url_for('nuevo_prestamo') }}" method="POST" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Nombre del Cliente</label>
+                        <input type="text" name="nombre" required placeholder="Ej. Juan Pérez" class="w-full p-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Teléfono</label>
+                        <input type="text" name="telefono" required placeholder="Ej. 3001234567" class="w-full p-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-600">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Capital Inicial ($)</label>
+                        <input type="number" step="any" name="capital" required placeholder="500000" class="w-full p-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Tasa de Interés (%)</label>
+                        <input type="number" step="any" name="tasa" required placeholder="10" class="w-full p-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-600">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Número de Cuotas</label>
+                        <input type="number" name="cuotas" required placeholder="12" class="w-full p-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Modalidad</label>
+                        <select name="modalidad" class="w-full p-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-600">
+                            <option value="DIARIO">DIARIO</option>
+                            <option value="SEMANAL">SEMANAL</option>
+                            <option value="QUINCENAL">QUINCENAL</option>
+                            <option value="MENSUAL" selected>MENSUAL</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Fecha del Próximo Pago</label>
+                    <input type="date" name="proximo_pago" required class="w-full p-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-600">
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t">
+                    <button type="button" onclick="cerrarModal()" class="px-4 py-2 bg-gray-100 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-200">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl text-sm hover:bg-indigo-700 shadow-lg shadow-indigo-600/20">Guardar Préstamo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function abrirModal() {
+            document.getElementById('modal-prestamo').classList.remove('hidden');
+        }
+        function cerrarModal() {
+            document.getElementById('modal-prestamo').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

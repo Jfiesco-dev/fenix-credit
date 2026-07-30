@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Iniciar Sesión - Fenix Credit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center min-h-screen font-sans">
+
+    <!-- Tarjeta de inicio de sesión con fondo blanco puro -->
+    <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100">
+        <!-- Logotipo con Imagen Grande y sin marco redondo -->
+        <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-52 h-40 mb-2 overflow-hidden bg-white">
+                <img src="{{ url_for('static', filename='aguilaa.avif') }}" alt="Logo Águila" class="w-full h-full object-contain">
+            </div>
+            <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight mt-1">Fenix Credit</h1>
+            <p class="text-sm text-gray-500 mt-1">Sistema Inteligente de Gestión Financiera</p>
+        </div>
+
+        <!-- Alertas -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="mb-4 p-3 rounded-xl text-sm {% if category == 'success' %}bg-green-50 text-green-700 border border-green-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %} font-medium flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i> {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <!-- Formulario -->
+        <form action="/" method="POST" class="space-y-5">
+            <div>
+                <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-2">Correo Electrónico</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400"><i class="fa-regular fa-envelope"></i></span>
+                    <input type="email" name="email" required placeholder="tu@correo.com" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white transition text-sm">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-2">Contraseña</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400"><i class="fa-solid fa-lock"></i></span>
+                    <input type="password" name="password" required placeholder="••••••••" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white transition text-sm">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition duration-200 text-sm">
+                Iniciar Sesión
+            </button>
+        </form>
+
+        <!-- Pie de página -->
+        <div class="text-center mt-6 pt-6 border-t border-gray-100">
+            <p class="text-sm text-gray-500">¿Aún no tienes cuenta? <a href="/registro" class="text-indigo-600 font-bold hover:underline">Regístrate gratis</a></p>
+        </div>
+    </div>
+
+</body>
+</html>

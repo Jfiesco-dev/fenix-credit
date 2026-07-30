@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Fenix Credit - Detalle de Ruta</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 font-sans antialiased">
+
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- SIDEBAR -->
+        <aside class="w-80 bg-slate-900 text-white flex flex-col justify-between hidden md:flex shadow-2xl z-20 shrink-0">
+            <div>
+                <!-- Cabecera del Sidebar -->
+                <div class="flex items-center gap-3.5 px-6 py-6 border-b border-slate-800">
+                    <div class="w-11 h-11 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-lg font-bold shadow-lg shadow-indigo-600/30">
+                        <i class="fa-solid fa-vault"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-base font-extrabold tracking-tight">Fenix Credit</h1>
+                        <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">Versión Libre</span>
+                    </div>
+                </div>
+
+                <!-- Navegación -->
+                <nav class="p-4 space-y-1.5 overflow-y-auto max-h-[calc(100vh-160px)]">
+                    <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'dashboard' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-chart-pie w-4 text-center"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('clientes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'clientes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-users w-4 text-center"></i> Clientes
+                    </a>
+                    <a href="{{ url_for('prestamos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'prestamos' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-hand-holding-dollar w-4 text-center"></i> Préstamos
+                    </a>
+                    <a href="{{ url_for('pagos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'pagos' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-receipt w-4 text-center"></i> Pagos
+                    </a>
+                    <a href="{{ url_for('cobranza') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'cobranza' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-comments-dollar w-4 text-center"></i> Cobranza
+                    </a>
+                    <a href="{{ url_for('solicitudes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'solicitudes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-file-circle-plus w-4 text-center"></i> Solicitudes
+                    </a>
+                    <a href="{{ url_for('rutas') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 bg-blue-600 text-white shadow-md shadow-blue-600/20">
+                        <i class="fa-solid fa-route w-4 text-center"></i> Rutas
+                    </a>
+                    <a href="{{ url_for('contratos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'contratos' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-file-contract w-4 text-center"></i> Contratos
+                    </a>
+                    <a href="{{ url_for('caja') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'caja' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-wallet w-4 text-center"></i> Caja
+                    </a>
+                    <a href="{{ url_for('reportes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'reportes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-chart-line w-4 text-center"></i> Reportes
+                    </a>
+                </nav>
+            </div>
+
+            <div class="p-5 border-t border-slate-800 flex items-center justify-between">
+                <span class="text-[11px] text-slate-400 font-semibold">Sistema Ilimitado</span>
+                <a href="{{ url_for('login') }}" class="text-red-400 hover:text-red-300 p-2 rounded-lg transition" title="Cerrar Sesión">
+                    <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                </a>
+            </div>
+        </aside>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <div class="flex-1 flex flex-col overflow-y-auto">
+            
+            <!-- Topbar -->
+            <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-xl font-bold text-slate-800">Detalle de Ruta</h2>
+                </div>
+            </header>
+
+            <!-- Cuerpo -->
+            <main class="p-8">
+                <!-- Cabecera de la Ruta -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white border border-slate-200 rounded-2xl p-6 mb-6 shadow-sm gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
+                            <i class="fa-solid fa-map-location-dot"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-extrabold text-slate-800">{{ ruta.nombre }}</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Cobrador asignado: <span class="font-semibold text-slate-700">{{ ruta.cobrador if ruta.cobrador else 'No asignado' }}</span></p>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('rutas') }}" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-5 py-3 rounded-xl transition flex items-center gap-2">
+                        <i class="fa-solid fa-arrow-left"></i> Volver a Rutas
+                    </a>
+                </div>
+
+                <!-- Tarjeta para Agregar Cliente -->
+                <div class="bg-white border border-slate-200 rounded-2xl p-6 mb-6 shadow-sm">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Agregar Cliente a esta Ruta</h4>
+                    <form action="{{ url_for('asignar_cliente_ruta', ruta_id=ruta.id) }}" method="POST" class="flex flex-col sm:flex-row gap-3">
+                        <div class="flex-1">
+                            <select name="cliente_id" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-blue-600 transition">
+                                <option value="" disabled selected>Seleccione un cliente registrado...</option>
+                                {% for cliente in clientes_disponibles %}
+                                <option value="{{ cliente.id }}">{{ cliente.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-6 py-3 rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2 shrink-0">
+                            <i class="fa-solid fa-user-plus"></i> Añadir a Ruta
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Listado de Clientes en la Ruta -->
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
+                        <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-users text-blue-600"></i> Clientes en la Ruta <span class="bg-blue-50 text-blue-600 text-xs px-2.5 py-0.5 rounded-full font-bold">{{ ruta.clientes|length }}</span>
+                        </h4>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50/70 border-b border-slate-200 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                    <th class="py-3.5 px-6">#</th>
+                                    <th class="py-3.5 px-6">Nombre del Cliente</th>
+                                    <th class="py-3.5 px-6">Teléfono</th>
+                                    <th class="py-3.5 px-6 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 text-sm">
+                                {% for cliente in ruta.clientes %}
+                                <tr class="hover:bg-slate-50/50 transition">
+                                    <td class="py-4 px-6 text-slate-500 font-medium">{{ loop.index }}</td>
+                                    <td class="py-4 px-6 font-bold text-slate-800">{{ cliente.nombre }}</td>
+                                    <td class="py-4 px-6 text-slate-600">{{ cliente.telefono }}</td>
+                                    <td class="py-4 px-6 text-right">
+                                        <a href="{{ url_for('remover_cliente_ruta', cliente_id=cliente.id) }}" class="w-8 h-8 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg inline-flex items-center justify-center transition" title="Quitar de la ruta" onclick="return confirm('¿Está seguro de quitar a este cliente de la ruta?');">
+                                            <i class="fa-solid fa-trash-can text-xs"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-16">
+                                        <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                                            <i class="fa-solid fa-users-slash"></i>
+                                        </div>
+                                        <p class="text-slate-600 font-semibold text-sm">No hay clientes agregados a esta ruta todavía.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

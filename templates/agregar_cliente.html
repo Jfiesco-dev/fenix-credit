@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Agregar Nuevo Cliente - Fenix Credit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans flex h-screen overflow-hidden">
+
+<!-- Sidebar / Menú Lateral -->
+<aside class="w-80 bg-slate-900 text-white flex flex-col justify-between hidden md:flex shadow-2xl z-20 shrink-0">
+    <div>
+        <!-- Cabecera del Sidebar -->
+        <div class="flex items-center gap-3.5 px-6 py-6 border-b border-slate-800">
+            <div class="w-11 h-11 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-lg font-bold shadow-lg shadow-indigo-600/30">
+                <i class="fa-solid fa-vault"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-extrabold tracking-tight">Fenix Credit</h1>
+                <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">Versión Libre</span>
+            </div>
+        </div>
+
+        <!-- Navegación con los botones y la Calculadora al final -->
+<nav class="p-4 space-y-1.5 overflow-y-auto max-h-[calc(100vh-160px)]">
+    <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'dashboard' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-chart-pie w-4 text-center"></i> Dashboard
+    </a>
+    <a href="{{ url_for('clientes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'clientes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-users w-4 text-center"></i> Clientes
+    </a>
+    <a href="{{ url_for('prestamos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'prestamos' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-hand-holding-dollar w-4 text-center"></i> Préstamos
+    </a>
+    <a href="{{ url_for('pagos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'pagos' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-receipt w-4 text-center"></i> Pagos
+    </a>
+    <a href="{{ url_for('cobranza') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'cobranza' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-comments-dollar w-4 text-center"></i> Cobranza
+    </a>
+    <a href="{{ url_for('solicitudes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'solicitudes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-file-circle-plus w-4 text-center"></i> Solicitudes
+    </a>
+    <a href="{{ url_for('rutas') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'rutas' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-route w-4 text-center"></i> Rutas
+    </a>
+    <a href="{{ url_for('contratos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'contratos' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-file-contract w-4 text-center"></i> Contratos
+    </a>
+    <a href="{{ url_for('caja') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'caja' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-wallet w-4 text-center"></i> Caja
+    </a>
+    <a href="{{ url_for('reportes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'reportes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+        <i class="fa-solid fa-chart-line w-4 text-center"></i> Reportes
+    </a>
+    <!-- Botón de Calculadora debajo de Reportes -->
+    <button onclick="toggleModalCalculadora()" class="w-full flex items-center gap-3.5 px-4 py-3.5 text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl font-semibold text-xs transition-all duration-200 text-left">
+        <i class="fa-solid fa-calculator w-4 text-center text-blue-400"></i> Calculadora
+    </button>
+</nav>
+    </div>
+
+    <div class="p-5 border-t border-slate-800 flex items-center justify-between">
+        <span class="text-[11px] text-slate-400 font-semibold">Sistema Ilimitado</span>
+        <a href="{{ url_for('login') }}" class="text-red-400 hover:text-red-300 p-2 rounded-lg transition" title="Cerrar Sesión">
+            <i class="fa-solid fa-right-from-bracket text-xs"></i>
+        </a>
+    </div>
+</aside>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 flex flex-col h-screen overflow-y-auto bg-slate-100">
+        <!-- Header -->
+        <header class="bg-white border-b border-gray-200 px-8 py-3.5 flex justify-between items-center shadow-xs sticky top-0 z-10">
+            <div class="flex items-center gap-3">
+                <a href="{{ url_for('clientes') }}" class="text-slate-400 hover:text-slate-600 font-bold text-xs"><i class="fa-solid fa-arrow-left mr-1"></i> CLIENTES</a>
+                <span class="text-slate-300">/</span>
+                <h2 class="text-sm font-black text-slate-800">Agregar Nuevo Cliente</h2>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Sistema Activo
+                </span>
+                <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs shadow-sm">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Formulario Completo de Registro -->
+        <div class="p-8 max-w-5xl mx-auto w-full space-y-6 pb-28 animate-fade">
+            
+            <!-- Título Superior -->
+            <div class="flex items-center gap-3 bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs">
+                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-2xs">
+                    <i class="fa-solid fa-user-plus"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-black text-slate-800">Agregar Nuevo Cliente</h2>
+                    <p class="text-xs text-slate-400">Complete la información para registrar un nuevo cliente en el sistema.</p>
+                </div>
+            </div>
+
+            <!-- Formulario Principal -->
+            <form action="#" method="POST" class="space-y-6">
+
+                <!-- 1. INFORMACIÓN PERSONAL -->
+                <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs space-y-5">
+                    <div class="flex items-center gap-2 border-b border-gray-100 pb-3">
+                        <i class="fa-solid fa-user text-blue-600 text-sm"></i>
+                        <div>
+                            <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider">Información Personal</h3>
+                            <p class="text-[11px] text-slate-400">Datos básicos de identificación del cliente</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+                        <!-- Foto de perfil -->
+                        <div class="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-2xl p-4 bg-slate-50 text-center">
+                            <div class="w-16 h-16 bg-gray-200 text-slate-400 rounded-full flex items-center justify-center text-xl mb-2 shadow-inner">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Foto de Perfil</span>
+                            <label class="cursor-pointer text-[11px] bg-white border border-gray-300 font-bold text-blue-600 px-3 py-1 rounded-lg shadow-2xs hover:bg-slate-50 transition">
+                                <i class="fa-solid fa-upload mr-1"></i> Subir foto
+                                <input type="file" class="hidden">
+                            </label>
+                            <span class="text-[9px] text-slate-400 mt-2">Opcional — se subirá al crear el cliente.</span>
+                        </div>
+
+                        <!-- Campos de texto -->
+                        <div class="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Número de Identificación *</label>
+                                <input type="text" required placeholder="Ingrese número de ID" class="w-full text-xs bg-slate-50 border border-gray-200 rounded-xl p-3 text-slate-700 focus:outline-none focus:border-blue-600">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nombre *</label>
+                                <input type="text" required placeholder="Ingrese nombre" class="w-full text-xs bg-slate-50 border border-gray-200 rounded-xl p-3 text-slate-700 focus:outline-none focus:border-blue-600">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Apellidos *</label>
+                                <input type="text" required placeholder="Ingrese apellidos" class="w-full text-xs bg-slate-50 border border-gray-200 rounded-xl p-3 text-slate-700 focus:outline-none focus:border-blue-600">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Género</label>
+                                <select class="w-full text-xs bg-slate-50 border border-gray-200 rounded-xl p-3 text-slate-700 focus:outline-none focus:border-blue-600">
+                                    <option>Seleccione género</option>
+                                    <option>Masculino</option>
+                                    <option>Femenino</option>
+                                    <option>Otro</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Fecha de Nacimiento</label>
+                                <input type="date" class="w-full text-xs bg-slate-50 border border-gray-200 rounded-xl p-3 text-slate-700 focus:outline-none focus:border-blue-600">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Email (opcional)</label>
+                                <input type="email" placeholder="correo@ejemplo.com" class="w-full text-xs bg-slate-50 border border-gray-200 rounded-xl p-3 text-slate-700 focus:outline-none focus:border-blue-600">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. CONTACTO Y UBICACIÓN -->
+                <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs space-y-5">
+                    <div class="flex items-center gap-2 border-b border-gray-100 pb-3">
+                        <i class="fa-solid fa-location-dot text-emerald-600 text-sm"></i>
+                        <div>
+                            <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider">Contacto y Ubicación</h3>
+                            <p class="text-[11px] text-slate-400">Información de contacto y dirección</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Celular *</label>
+                            <div class="flex">
+                                <select class="bg-slate-100 border border-gray-200 rounded-l-xl px-3 text-xs font-bold text-slate-600 focus:outline-none">
+                                    <option>co +57</option>
+                                    <option>us +1</option>
+                                    <option>es +34</option>
+                                </select>
+                                <input type="tel" required placeholder="Ingrese número celular" class="w-full text-xs bg-slate-50 border border-l-0 border-gray-200 rounded-r-xl p-3 text-slate-700 focus:outline-none focus:border-blue-600">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Dirección *</label>
+                            <div class="relative">
+                                <input type="text" required placeholder="Ingrese dirección" class="w-full text-xs bg-slate-50 border border-gray-200 rounded-xl p-3 pr-10 text-slate-700 focus:outline-none focus:border-blue-600">
+                                <i class="fa-solid fa-map-pin absolute right-3 top-3.5 text-slate-400"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nacionalidad</label>
+                            <select class="w-full text-xs bg-slate-50 border border-gray-200 rounded-xl p-3 text-slate-700 focus:outline-none focus:border-blue-600">
+                                <option>Seleccione nacionalidad</option>
+                                <option>Colombiana</option>
+                                <option>Venezolana</option>
+                                <option>Mexicana</option>
+                                <option>Otra</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Ruta</label>
+                            <select class="w-full text-xs bg-slate-50 border border-gray-200 rounded-xl p-3 text-slate-700 focus:outline-none focus:border-blue-600">
+                                <option>Seleccione ruta</option>
+                                <option>Ruta Principal</option>
+                                <option>Ruta Norte</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. INFORMACIÓN SOCIOECONÓMICA -->
+                <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs space-y-5">
+                    <div class="flex items-center gap-2 border-b border-gray-100 pb-3">
+                        <i class="fa-solid fa-briefcase text-amber-600 text-sm"></i>
+                        <div>
+                            <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider">Información Socioeconómica</h3>
+                            <p class="text-[11px] text-slate-400">Datos laborales y económicos del cliente</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Tipo de Vivienda</label>
+                            <select class="w-full text-xs bg-slate-50 border border-gray-200 rounded-xl p-3 text-slate-700 focus:outline-none focus:border-blue-600">
+                                <option>Seleccione tipo</option>
+                                <option>Propia</option>
+                                <option>Alquilada</option>
+                                <option>Familiar</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Situación Laboral</label>
+                            <select class="w-full text-xs bg-slate-50 border border-gray-200 rounded-xl p-3 text-slate-700 focus:outline-none focus:border-blue-600">
+                                <option>Seleccione situación</option>
+                                <option>Empleado</option>
+                                <option>Independiente</option>
+                                <option>Empresario</option>
+                                <option>Pensionado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Ingreso Mensual</label>
+                            <input type="number" step="0.01" value="0.00" class="w-full text-xs bg-slate-50 border border-gray-200 rounded-xl p-3 text-slate-700 focus:outline-none focus:border-blue-600">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Estado Civil</label>
+                            <select class="w-full text-xs bg-slate-50 border border-gray-200 rounded-xl p-3 text-slate-700 focus:outline-none focus:border-blue-600">
+                                <option>Seleccione estado</option>
+                                <option>Soltero/a</option>
+                                <option>Casado/a</option>
+                                <option>Unión Libre</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Número de Dependientes</label>
+                            <input type="number" value="0" class="w-full text-xs bg-slate-50 border border-gray-200 rounded-xl p-3 text-slate-700 focus:outline-none focus:border-blue-600">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. DOCUMENTOS -->
+                <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs space-y-4">
+                    <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-file-lines text-indigo-600 text-sm"></i>
+                            <div>
+                                <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider">Documentos</h3>
+                                <p class="text-[11px] text-slate-400">Opcional — se subirán después de crear el cliente. Máximo 3 archivos.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <select class="text-xs bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 font-bold text-slate-600 focus:outline-none">
+                                <option>Identificación (INE/DNI)</option>
+                                <option>Comprobante de Ingresos</option>
+                                <option>Comprobante deDomicilio</option>
+                            </select>
+                            <button type="button" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-sm">
+                                <i class="fa-solid fa-upload mr-1"></i> Añadir
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-center py-6 text-slate-400 text-xs font-medium">
+                        No has añadido documentos.
+                    </div>
+                </div>
+
+                <!-- 5. REFERENCIAS -->
+                <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs space-y-4">
+                    <div class="flex items-center gap-2 border-b border-gray-100 pb-3">
+                        <i class="fa-solid fa-address-book text-purple-600 text-sm"></i>
+                        <div>
+                            <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider">Referencias</h3>
+                            <p class="text-[11px] text-slate-400">Contacto de referencia personal — si llena un campo, todos son obligatorios</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nombre Completo</label>
+                            <input type="text" placeholder="Nombre de la referencia" class="w-full text-xs bg-slate-50 border border-gray-200 rounded-xl p-3 text-slate-700 focus:outline-none focus:border-blue-600">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Teléfono</label>
+                            <div class="flex">
+                                <select class="bg-slate-100 border border-gray-200 rounded-l-xl px-3 text-xs font-bold text-slate-600 focus:outline-none">
+                                    <option>co +57</option>
+                                </select>
+                                <input type="tel" placeholder="Teléfono de la referencia" class="w-full text-xs bg-slate-50 border border-l-0 border-gray-200 rounded-r-xl p-3 text-slate-700 focus:outline-none focus:border-blue-600">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Parentesco</label>
+                            <select class="w-full text-xs bg-slate-50 border border-gray-200 rounded-xl p-3 text-slate-700 focus:outline-none focus:border-blue-600">
+                                <option>Seleccione parentesco</option>
+                                <option>Familiar / Padre / Madre</option>
+                                <option>Cónyuge</option>
+                                <option>Hermano/a</option>
+                                <option>Amigo / Colega</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción Final -->
+                <div class="flex justify-end gap-3 pt-4">
+                    <a href="{{ url_for('clientes') }}" class="px-6 py-3 border border-gray-200 rounded-xl text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 transition shadow-2xs">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-600/30 transition">
+                        Guardar Cliente
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </main>
+</body>
+</html>

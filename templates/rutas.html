@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Fenix Credit - Gestión de Rutas</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 font-sans antialiased">
+
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- SIDEBAR -->
+        <aside class="w-80 bg-slate-900 text-white flex flex-col justify-between hidden md:flex shadow-2xl z-20 shrink-0">
+            <div>
+                <!-- Cabecera del Sidebar -->
+                <div class="flex items-center gap-3.5 px-6 py-6 border-b border-slate-800">
+                    <div class="w-11 h-11 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-lg font-bold shadow-lg shadow-indigo-600/30">
+                        <i class="fa-solid fa-vault"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-base font-extrabold tracking-tight">Fenix Credit</h1>
+                        <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">Versión Libre</span>
+                    </div>
+                </div>
+
+                <!-- Navegación -->
+                <nav class="p-4 space-y-1.5 overflow-y-auto max-h-[calc(100vh-160px)]">
+                    <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'dashboard' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-chart-pie w-4 text-center"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('clientes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'clientes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-users w-4 text-center"></i> Clientes
+                    </a>
+                    <a href="{{ url_for('prestamos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'prestamos' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-hand-holding-dollar w-4 text-center"></i> Préstamos
+                    </a>
+                    <a href="{{ url_for('pagos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'pagos' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-receipt w-4 text-center"></i> Pagos
+                    </a>
+                    <a href="{{ url_for('cobranza') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'cobranza' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-comments-dollar w-4 text-center"></i> Cobranza
+                    </a>
+                    <a href="{{ url_for('solicitudes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'solicitudes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-file-circle-plus w-4 text-center"></i> Solicitudes
+                    </a>
+                    <a href="{{ url_for('rutas') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 bg-blue-600 text-white shadow-md shadow-blue-600/20">
+                        <i class="fa-solid fa-route w-4 text-center"></i> Rutas
+                    </a>
+                    <a href="{{ url_for('contratos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'contratos' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-file-contract w-4 text-center"></i> Contratos
+                    </a>
+                    <a href="{{ url_for('caja') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'caja' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-wallet w-4 text-center"></i> Caja
+                    </a>
+                    <a href="{{ url_for('reportes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'reportes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                        <i class="fa-solid fa-chart-line w-4 text-center"></i> Reportes
+                    </a>
+                    <!-- Botón de Calculadora Directo al Modal Estándar -->
+                    <button type="button" onclick="toggleModalCalculadora()" class="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 text-slate-300 hover:text-white hover:bg-slate-800/80 text-left">
+                        <i class="fa-solid fa-calculator w-4 text-center"></i> Calculadora
+                    </button>
+                </nav>
+            </div>
+
+            <div class="p-5 border-t border-slate-800 flex items-center justify-between">
+                <span class="text-[11px] text-slate-400 font-semibold">Sistema Ilimitado</span>
+                <a href="{{ url_for('login') }}" class="text-red-400 hover:text-red-300 p-2 rounded-lg transition" title="Cerrar Sesión">
+                    <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                </a>
+            </div>
+        </aside>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <div class="flex-1 flex flex-col overflow-y-auto">
+            
+            <!-- Topbar -->
+            <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-xl font-bold text-slate-800">Gestión de Rutas de Cobro</h2>
+                </div>
+            </header>
+
+            <!-- Cuerpo -->
+            <main class="p-8">
+                
+                <!-- Tarjeta para Crear Nueva Ruta -->
+                <div class="bg-white border border-slate-200 rounded-2xl p-6 mb-8 shadow-sm">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Crear Nueva Ruta</h4>
+                    <form action="{{ url_for('rutas') }}" method="POST" class="flex flex-col md:flex-row gap-3">
+                        <div class="flex-1">
+                            <input type="text" name="nombre" placeholder="Nombre de la ruta (Ej. Ruta Norte, Centro...)" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-blue-600 transition">
+                        </div>
+                        <div class="flex-1">
+                            <input type="text" name="cobrador" placeholder="Nombre del cobrador asignado" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-blue-600 transition">
+                        </div>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-6 py-3 rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center gap-2 shrink-0">
+                            <i class="fa-solid fa-plus"></i> Registrar Ruta
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Listado de Rutas Registradas -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for ruta in rutas %}
+                    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                                    <i class="fa-solid fa-map-location-dot"></i>
+                                </div>
+                                <span class="bg-blue-50 text-blue-600 font-bold text-xs px-3 py-1 rounded-full">
+                                    {{ ruta.clientes|length }} Clientes
+                                </span>
+                            </div>
+                            <h3 class="text-lg font-extrabold text-slate-800 mb-1">{{ ruta.nombre }}</h3>
+                            <p class="text-xs text-slate-500 mb-6">Cobrador: <span class="font-semibold text-slate-700">{{ ruta.cobrador if ruta.cobrador else 'No asignado' }}</span></p>
+                        </div>
+                        
+                        <!-- Acciones de la Ruta: Administrar y Borrar -->
+                        <div class="pt-4 border-t border-slate-100 flex items-center gap-2">
+                            <a href="{{ url_for('detalle_ruta', id=ruta.id) }}" class="flex-1 bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700 font-bold text-xs py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-eye"></i> Administrar Ruta
+                            </a>
+                            <a href="{{ url_for('borrar_ruta', id=ruta.id) }}" onclick="return confirm('¿Estás seguro de eliminar esta ruta? Los clientes asociados quedarán sin ruta asignada.');" class="bg-red-50 hover:bg-red-600 hover:text-white text-red-600 font-bold text-xs py-2.5 px-3.5 rounded-xl transition flex items-center justify-center" title="Eliminar Ruta">
+                                <i class="fa-solid fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-span-full text-center py-16 bg-white border border-slate-200 rounded-2xl">
+                        <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                            <i class="fa-solid fa-route"></i>
+                        </div>
+                        <p class="text-slate-600 font-semibold text-sm">No hay rutas registradas en el sistema.</p>
+                        <p class="text-slate-400 text-xs mt-1">Utiliza el formulario superior para crear la primera ruta de cobro.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal Calculadora Financiera Avanzada (Centrado y con max-w-2xl idéntico al solicitado) -->
+    <div id="modalCalculadora" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
+            
+            <!-- Cabecera -->
+            <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center text-white">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-calculator text-lg"></i>
+                    <h3 class="font-bold text-base">Calculadora Financiera</h3>
+                </div>
+                <button onclick="toggleModalCalculadora()" class="text-indigo-200 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Cuerpo del Formulario -->
+            <div class="p-6 overflow-y-auto space-y-4 flex-1">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Monto del Préstamo *</label>
+                        <input type="number" id="calc-monto" placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Tipo de Amortización *</label>
+                        <select id="calc-amortizacion" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
+                            <option value="" disabled selected>Seleccionar tipo</option>
+                            <option value="frances">Cuota Fija (Francés)</option>
+                            <option value="aleman">Disminuir Cuota (Alemán)</option>
+                            <option value="interes_fijo">Interés Fijo</option>
+                            <option value="capital_final">Capital al Final (Americano)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Modalidad de Pago *</label>
+                        <select id="calc-modalidad" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
+                            <option value="" disabled selected>Seleccionar modalidad</option>
+                            <option value="diario">Diario</option>
+                            <option value="semanal">Semanal</option>
+                            <option value="quincenal">Quincenal</option>
+                            <option value="mensual">Mensual</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1"># Cuotas *</label>
+                        <input type="number" id="calc-cuotas" placeholder="0" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Monto de Cuotas *</label>
+                        <input type="number" id="calc-resultado-cuota" readonly placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-gray-700 font-bold text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Primer Pago *</label>
+                        <input type="date" id="calc-fecha" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Interés (%)</label>
+                        <div class="relative">
+                            <input type="number" step="any" id="calc-interes" placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm pr-8">
+                            <span class="absolute right-3 top-2.5 text-gray-400 font-bold text-sm">%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Comisión</label>
+                        <div class="relative">
+                            <input type="number" step="any" id="calc-comision" placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm pr-8">
+                            <span class="absolute right-3 top-2.5 text-gray-400 font-bold text-sm">%</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-[11px] text-gray-400 italic">Ingresa el monto, cuotas e interés para calcular el valor de la cuota automáticamente.</p>
+            </div>
+
+            <!-- Pie / Botón de Acción -->
+            <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                <button onclick="toggleModalCalculadora()" class="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-xl transition text-sm">
+                    Cerrar
+                </button>
+                <button onclick="calcularPrestamoFinanciero()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition text-sm">
+                    CALCULAR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleModalCalculadora() {
+            const modal = document.getElementById('modalCalculadora');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            } else {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+            }
+        }
+
+        function calcularPrestamoFinanciero() {
+            const monto = parseFloat(document.getElementById('calc-monto').value) || 0;
+            const cuotas = parseInt(document.getElementById('calc-cuotas').value) || 0;
+            const interes = parseFloat(document.getElementById('calc-interes').value) || 0;
+
+            if (monto <= 0 || cuotas <= 0) {
+                alert('Por favor ingresa un monto y un número de cuotas válidos.');
+                return;
+            }
+
+            let totalInteres = (monto * (interes / 100)) * cuotas;
+            let totalPagar = monto + totalInteres;
+            let valorCuota = totalPagar / cuotas;
+
+            document.getElementById('calc-resultado-cuota').value = valorCuota.toFixed(2);
+        }
+    </script>
+</body>
+</html>

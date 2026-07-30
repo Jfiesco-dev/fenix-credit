@@ -1,0 +1,21 @@
+<div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs animate-fade">
+    <div class="flex justify-between items-center mb-2">
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ingresos Anuales</h3>
+        <select id="select-anio" onchange="cambiarAnioGrafica()" class="text-xs bg-slate-50 border border-gray-200 font-bold px-2.5 py-1 rounded-lg text-slate-700 focus:outline-none cursor-pointer">
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+        </select>
+    </div>
+    <p id="label-anio-desc" class="text-[11px] text-slate-400 mb-4">Resumen de ingresos mensuales durante el año 2026.</p>
+    
+    <div class="h-36 flex items-end justify-between gap-1.5 pt-4 border-b border-gray-100 pb-2">
+        {% set meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'] %}
+        {% for i in range(12) %}
+            {% set valor = ingresos_meses[i] | default(0) if ingresos_meses is defined else 0 %}
+            <div class="w-full {{ 'bg-blue-600 shadow-md shadow-blue-600/20' if valor > 0 else 'bg-slate-100 hover:bg-blue-500' }} rounded-t transition-all h-{{ [valor|int * 2, 6]|max if valor > 0 else '6' }} flex items-end justify-center">
+                <span class="text-[9px] {{ 'text-white font-bold' if valor > 0 else 'text-slate-400' }} pb-1">{{ meses[i] }}</span>
+            </div>
+        {% endfor %}
+    </div>
+</div>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Comprobante de Pago - Fenix Credit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 font-sans flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-8 border border-gray-100 space-y-6">
+        <!-- Cabecera del Recibo -->
+        <div class="text-center border-b border-gray-100 pb-5">
+            <div class="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center text-xl font-bold mx-auto mb-3 shadow-lg shadow-indigo-600/30">
+                <i class="fa-solid fa-vault"></i>
+            </div>
+            <h1 class="text-xl font-extrabold text-gray-800">Fenix Credit</h1>
+            <p class="text-xs text-gray-400 font-medium uppercase tracking-wider">Comprobante de Pago / Abono</p>
+        </div>
+
+        <!-- Detalles de la Transacción -->
+        <div class="space-y-3 text-sm">
+            <div class="flex justify-between py-1 border-b border-gray-50">
+                <span class="text-gray-400 font-medium">Nº de Recibo:</span>
+                <span class="font-bold text-gray-800">#{{ pago.id }}</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-gray-50">
+                <span class="text-gray-400 font-medium">Fecha de Pago:</span>
+                <span class="font-bold text-gray-800">{{ pago.fecha }}</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-gray-50">
+                <span class="text-gray-400 font-medium">Cliente:</span>
+                <span class="font-bold text-gray-800">{{ pago.prestamo.cliente.nombre }}</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-gray-50">
+                <span class="text-gray-400 font-medium">Concepto:</span>
+                <span class="font-bold text-indigo-600">{{ pago.concepto }}</span>
+            </div>
+        </div>
+
+        <!-- Desglose Financiero -->
+        <div class="bg-gray-50 rounded-xl p-4 space-y-2 text-sm border border-gray-100">
+            <div class="flex justify-between text-gray-600">
+                <span>Capital abonado:</span>
+                <span class="font-semibold">${{ "{:,.2f}".format(pago.capital) }}</span>
+            </div>
+            <div class="flex justify-between text-gray-600">
+                <span>Interés pagado:</span>
+                <span class="font-semibold">${{ "{:,.2f}".format(pago.interes) }}</span>
+            </div>
+            <div class="flex justify-between text-gray-600">
+                <span>Mora pagada:</span>
+                <span class="font-semibold">${{ "{:,.2f}".format(pago.mora) }}</span>
+            </div>
+            <div class="border-t border-gray-200 pt-2 flex justify-between items-center">
+                <span class="font-extrabold text-gray-800">Total Pagado:</span>
+                <span class="text-lg font-extrabold text-emerald-600">${{ "{:,.2f}".format(pago.total_pago) }}</span>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex gap-3 pt-2">
+            <a href="{{ url_for('pagos') }}" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl text-center text-sm transition">
+                <i class="fa-solid fa-arrow-left mr-1"></i> Volver
+            </a>
+            <button onclick="window.print()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl text-center text-sm shadow-lg shadow-indigo-600/30 transition">
+                <i class="fa-solid fa-print mr-1"></i> Imprimir
+            </button>
+        </div>
+    </div>
+
+</body>
+</html>
