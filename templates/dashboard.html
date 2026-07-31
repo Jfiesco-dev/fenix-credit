@@ -18,7 +18,6 @@
 <body class="bg-slate-100 font-sans flex h-screen overflow-hidden">
 <aside class="w-80 bg-slate-900 text-white flex flex-col justify-between hidden md:flex shadow-2xl z-20 shrink-0">
     <div>
-        <!-- Cabecera del Sidebar -->
         <div class="flex items-center gap-3.5 px-6 py-6 border-b border-slate-800">
             <div class="w-11 h-11 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-lg font-bold shadow-lg shadow-indigo-600/30">
                 <i class="fa-solid fa-vault"></i>
@@ -29,7 +28,6 @@
             </div>
         </div>
 
-        <!-- Navegación con los botones y la Calculadora al final -->
         <nav class="p-4 space-y-1.5 overflow-y-auto max-h-[calc(100vh-160px)]">
             <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'dashboard' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
                 <i class="fa-solid fa-chart-pie w-4 text-center"></i> Dashboard
@@ -61,7 +59,6 @@
             <a href="{{ url_for('reportes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'reportes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
                 <i class="fa-solid fa-chart-line w-4 text-center"></i> Reportes
             </a>
-            <!-- Botón de Calculadora debajo de Reportes -->
             <button type="button" onclick="toggleModalCalculadoraFinanciera()" class="w-full flex items-center gap-3.5 px-4 py-3.5 text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl font-semibold text-xs transition-all duration-200 text-left">
                 <i class="fa-solid fa-calculator w-4 text-center text-blue-400"></i> Calculadora
             </button>
@@ -76,18 +73,13 @@
     </div>
 </aside>
 
-    <!-- Contenido Principal -->
     <main class="flex-1 flex flex-col h-screen overflow-y-auto bg-slate-100">
-        <!-- Header Superior -->
         <header class="bg-white border-b border-gray-200 px-8 py-3.5 flex justify-between items-center shadow-xs sticky top-0 z-10">
             <div class="flex items-center gap-3">
                 <span class="text-xs font-bold uppercase tracking-wider text-slate-400">MÓDULO /</span>
                 <h2 class="text-sm font-black text-slate-800">Inicio</h2>
             </div>
             <div class="flex items-center gap-3">
-                <button onclick="toggleModalPrestamo()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl flex items-center gap-2 shadow-md shadow-blue-600/20 transition">
-                    <i class="fa-solid fa-plus"></i> Nuevo Préstamo
-                </button>
                 <span class="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Sistema Activo
                 </span>
@@ -99,7 +91,6 @@
 
         <div class="p-8 max-w-7xl mx-auto w-full space-y-6 pb-28">
 
-            <!-- 1. Tarjetas Superiores de Métricas -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 <div class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md transition-all duration-300 animate-fade">
                     <div class="flex justify-between items-start">
@@ -160,7 +151,6 @@
                 </div>
             </div>
 
-            <!-- 2. Resumen del Día e Ingresos / Egresos -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs lg:col-span-2 animate-fade" style="animation-delay: 0.2s;">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Resumen del Día</h3>
@@ -202,10 +192,7 @@
                 </div>
             </div>
 
-            <!-- 3. Cuentas por Cobrar, Actividad Reciente e Ingresos Anuales -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                <!-- CUENTAS POR COBRAR CON FUNCIONALIDAD COMPLETA -->
                 <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs flex flex-col justify-between animate-fade relative" style="animation-delay: 0.3s;">
                     <div>
                         <div class="flex justify-between items-center mb-3">
@@ -239,7 +226,6 @@
                     <div></div>
                 </div>
 
-                <!-- Actividad Reciente -->
                 <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs flex flex-col justify-between animate-fade" style="animation-delay: 0.35s;">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Actividad Reciente</h3>
                     <div class="text-center py-12">
@@ -251,7 +237,6 @@
                     <div></div>
                 </div>
 
-                <!-- INGRESOS ANUALES DINÁMICOS -->
                 <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs animate-fade" style="animation-delay: 0.4s;">
                     <div class="flex justify-between items-center mb-2">
                         <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ingresos Anuales</h3>
@@ -277,7 +262,6 @@
 
         </div>
 
-        <!-- MODAL DE FILTROS AVANZADOS -->
         <div id="modal-filtros" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center hidden">
             <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl border border-gray-200 animate-fade space-y-4">
                 <div class="flex justify-between items-center border-b border-gray-100 pb-3">
@@ -308,10 +292,16 @@
                         <label class="font-bold text-slate-600 block mb-1">Modalidad</label>
                         <select class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600">
                             <option>Todas</option>
-                            <option>Diario</option>
-                            <option>Semanal</option>
-                            <option>Quincenal</option>
-                            <option>Mensual</option>
+                            <option value="DIARIO">DIARIO (Gota a Gota)</option>
+                            <option value="SEMANAL">SEMANAL</option>
+                            <option value="BISEMANAL">BISEMANAL</option>
+                            <option value="QUINCENAL">QUINCENAL</option>
+                            <option value="15 Y FIN DE MES">15 Y FIN DE MES</option>
+                            <option value="MENSUAL">MENSUAL</option>
+                            <option value="BIMESTRAL">BIMESTRAL</option>
+                            <option value="TRIMESTRAL">TRIMESTRAL</option>
+                            <option value="SEMESTRAL">SEMESTRAL</option>
+                            <option value="ANUAL">ANUAL</option>
                         </select>
                     </div>
                     <div>
@@ -331,7 +321,7 @@
             </div>
         </div>
 
-        <!-- MODAL DE NUEVO PRÉSTAMO -->
+        <!-- MODAL DE NUEVO PRÉSTAMO CON CÁLCULO AUTOMÁTICO EN VIVO -->
         <div id="modal-nuevo-prestamo" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center hidden">
             <div class="bg-white w-full max-w-2xl rounded-2xl p-6 shadow-2xl border border-gray-200 animate-fade space-y-4 max-h-[90vh] overflow-y-auto">
                 <div class="flex justify-between items-center border-b border-gray-100 pb-3">
@@ -352,24 +342,32 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="font-bold text-slate-600 block mb-1">Capital Inicial ($) *</label>
-                            <input type="number" step="any" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="capital" placeholder="500000" required>
+                            <input type="number" step="any" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="capital" placeholder="200000" required>
                         </div>
                         <div>
-                            <label class="font-bold text-slate-600 block mb-1">Tasa de Interés (%) *</label>
-                            <input type="number" step="any" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="tasa" placeholder="10" required>
+                            <label class="font-bold text-slate-600 block mb-1">Tasa de Interés Total (%) *</label>
+                            <input type="number" step="any" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="tasa" placeholder="20" required>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="font-bold text-slate-600 block mb-1">Número de Cuotas *</label>
-                            <input type="number" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="cuotas" placeholder="12" required>
+                            <input type="number" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="cuotas" placeholder="24" required>
                         </div>
                         <div>
                             <label class="font-bold text-slate-600 block mb-1">Modalidad *</label>
                             <select class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="modalidad">
-                                <option value="MENSUAL">MENSUAL</option>
+                                <option value="DIARIO" selected>DIARIO (Gota a Gota)</option>
                                 <option value="SEMANAL">SEMANAL</option>
+                                <option value="BISEMANAL">BISEMANAL</option>
+                                <option value="QUINCENAL">QUINCENAL</option>
+                                <option value="15 Y FIN DE MES">15 Y FIN DE MES</option>
+                                <option value="MENSUAL">MENSUAL</option>
+                                <option value="BIMESTRAL">BIMESTRAL</option>
+                                <option value="TRIMESTRAL">TRIMESTRAL</option>
+                                <option value="SEMESTRAL">SEMESTRAL</option>
+                                <option value="ANUAL">ANUAL</option>
                             </select>
                         </div>
                     </div>
@@ -378,8 +376,11 @@
                         <div>
                             <label class="font-bold text-slate-600 block mb-1">Tipo de Amortización *</label>
                             <select class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="tipo_amortizacion">
-                                <option value="CAPITAL AL FINAL">Capital al final</option>
-                                <option value="FIJA">Cuota Fija</option>
+                                <option value="interes_fijo" selected>Cuota Fija con Interés Fijo / Tasa Plana (Ej. 200k a 24 cuotas de 10k)</option>
+                                <option value="frances">Cuota Fija (Francés Compuesto)</option>
+                                <option value="aleman">Disminución de Cuota (Alemán)</option>
+                                <option value="gota_a_gota">Gota a Gota tradicional</option>
+                                <option value="CAPITAL AL FINAL">Capital al final (Americano)</option>
                             </select>
                         </div>
                         <div>
@@ -430,18 +431,16 @@
         <div id="modalCalculadora" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
                 
-                <!-- Cabecera -->
                 <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center text-white">
                     <div class="flex items-center gap-2">
                         <i class="fa-solid fa-calculator text-lg"></i>
-                        <h3 class="font-bold text-base">Calculadora Financiera</h3>
+                        <h3 class="font-bold text-base">Calculadora Financiera Avanzada</h3>
                     </div>
                     <button onclick="toggleModalCalculadoraFinanciera()" class="text-indigo-200 hover:text-white transition">
                         <i class="fa-solid fa-xmark text-lg"></i>
                     </button>
                 </div>
 
-                <!-- Cuerpo del Formulario -->
                 <div class="p-6 overflow-y-auto space-y-4 flex-1">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -451,10 +450,10 @@
                         <div>
                             <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Tipo de Amortización *</label>
                             <select id="calc-amortizacion" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
-                                <option value="" disabled selected>Seleccionar tipo</option>
+                                <option value="interes_fijo" selected>Cuota Fija con Interés Fijo / Tasa Plana</option>
                                 <option value="frances">Cuota Fija (Francés)</option>
                                 <option value="aleman">Disminuir Cuota (Alemán)</option>
-                                <option value="interes_fijo">Interés Fijo</option>
+                                <option value="gota_a_gota">Gota a Gota / Diario</option>
                                 <option value="capital_final">Capital al Final (Americano)</option>
                             </select>
                         </div>
@@ -464,11 +463,16 @@
                         <div>
                             <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Modalidad de Pago *</label>
                             <select id="calc-modalidad" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
-                                <option value="" disabled selected>Seleccionar modalidad</option>
-                                <option value="diario">Diario</option>
-                                <option value="semanal">Semanal</option>
-                                <option value="quincenal">Quincenal</option>
-                                <option value="mensual">Mensual</option>
+                                <option value="DIARIO" selected>DIARIO</option>
+                                <option value="SEMANAL">SEMANAL</option>
+                                <option value="BISEMANAL">BISEMANAL</option>
+                                <option value="QUINCENAL">QUINCENAL</option>
+                                <option value="15 Y FIN DE MES">15 Y FIN DE MES</option>
+                                <option value="MENSUAL">MENSUAL</option>
+                                <option value="BIMESTRAL">BIMESTRAL</option>
+                                <option value="TRIMESTRAL">TRIMESTRAL</option>
+                                <option value="SEMESTRAL">SEMESTRAL</option>
+                                <option value="ANUAL">ANUAL</option>
                             </select>
                         </div>
                         <div>
@@ -479,8 +483,8 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Monto de Cuotas *</label>
-                            <input type="number" id="calc-resultado-cuota" readonly placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-gray-700 font-bold text-sm">
+                            <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1" id="label-resultado-cuota">Valor de Cuota / Primera Cuota *</label>
+                            <input type="text" id="calc-resultado-cuota" readonly placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-gray-700 font-bold text-sm">
                         </div>
                         <div>
                             <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Primer Pago *</label>
@@ -490,30 +494,29 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Interés (%)</label>
+                            <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Interés Total (%) *</label>
                             <div class="relative">
-                                <input type="number" step="any" id="calc-interes" placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm pr-8">
+                                <input type="number" step="any" id="calc-interes" placeholder="20" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm pr-8">
                                 <span class="absolute right-3 top-2.5 text-gray-400 font-bold text-sm">%</span>
                             </div>
                         </div>
                         <div>
-                            <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Comisión</label>
+                            <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Comisión (%)</label>
                             <div class="relative">
                                 <input type="number" step="any" id="calc-comision" placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm pr-8">
                                 <span class="absolute right-3 top-2.5 text-gray-400 font-bold text-sm">%</span>
                             </div>
                         </div>
                     </div>
-                    <p class="text-[11px] text-gray-400 italic">Ingresa el monto, cuotas e interés para calcular el valor de la cuota automáticamente.</p>
+                    <p class="text-[11px] text-gray-400 italic" id="calc-descripcion-metodo">Ejemplo: $200,000 a 24 cuotas diarias con 20% de interés total arroja cuotas exactas de $10,000.</p>
                 </div>
 
-                <!-- Pie / Botón de Acción -->
                 <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
                     <button onclick="toggleModalCalculadoraFinanciera()" class="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-xl transition text-sm">
                         Cerrar
                     </button>
                     <button onclick="calcularPrestamoFinanciero()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition text-sm">
-                        CALCULAR
+                        CALCULAR PRÉSTAMO
                     </button>
                 </div>
             </div>
@@ -561,20 +564,172 @@
         function filtrarClientes() {}
         function aplicarFiltroFecha() {}
 
+        function calcularPrestamoAutomatico() {
+            const capitalInput = document.querySelector('#modal-nuevo-prestamo input[name="capital"]');
+            const tasaInput = document.querySelector('#modal-nuevo-prestamo input[name="tasa"]');
+            const cuotasInput = document.querySelector('#modal-nuevo-prestamo input[name="cuotas"]');
+            const tipoAmortizacionSelect = document.querySelector('#modal-nuevo-prestamo select[name="tipo_amortizacion"]');
+            const modalidadSelect = document.querySelector('#modal-nuevo-prestamo select[name="modalidad"]');
+
+            if (!capitalInput || !tasaInput || !tipoAmortizacionSelect) return;
+
+            const capital = parseFloat(capitalInput.value) || 0;
+            const tasaPorcentaje = parseFloat(tasaInput.value) || 0;
+            const cuotas = parseInt(cuotasInput.value) || 0;
+            const tipoAmortizacion = tipoAmortizacionSelect.value;
+            const modalidad = modalidadSelect ? modalidadSelect.value : 'MENSUAL';
+
+            let multiplicadorMeses = 1;
+            if (modalidad === 'BIMESTRAL') {
+                multiplicadorMeses = 2;
+            } else if (modalidad === 'TRIMESTRAL') {
+                multiplicadorMeses = 3;
+            }
+
+            let infoBox = document.getElementById('info-calculo-automatico');
+            if (!infoBox) {
+                infoBox = document.createElement('div');
+                infoBox.id = 'info-calculo-automatico';
+                infoBox.className = 'bg-blue-50 border border-blue-200 text-blue-900 p-3 rounded-xl text-xs space-y-1 font-medium';
+                const refElement = capitalInput.closest('form').querySelector('div:has(input[name="proximo_pago"])') || tipoAmortizacionSelect.closest('div');
+                if (refElement) {
+                    refElement.parentNode.insertBefore(infoBox, refElement);
+                }
+            }
+
+            if (capital <= 0) {
+                infoBox.innerHTML = `<span class="font-bold text-blue-700">💡 Automatización:</span> Ingresa el capital inicial para ver el cálculo.`;
+                return;
+            }
+
+            let valorCuota = 0;
+            let esIndefinido = (cuotas <= 0 || isNaN(cuotas));
+
+            if (tipoAmortizacion === 'interes_fijo' && !esIndefinido) {
+                let interesTotal = capital * (tasaPorcentaje / 100.0) * multiplicadorMeses;
+                let montoTotal = capital + interesTotal;
+                valorCuota = montoTotal / cuotas;
+                infoBox.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold uppercase tracking-wider text-[10px] text-blue-800">📊 Vista Previa Cuota Fija / Tasa Plana (${modalidad}):</span>
+                        <span class="text-emerald-700 font-bold">¡Cálculo en vivo!</span>
+                    </div>
+                    <div class="pt-1 border-t border-blue-200/60">
+                        Valor de cada una de las <strong>${cuotas} cuotas</strong>: <strong class="text-blue-900">$${valorCuota.toFixed(2)}</strong> (Total a pagar: $${montoTotal.toFixed(2)})
+                    </div>
+                `;
+            } else if (tipoAmortizacion === 'frances' && !esIndefinido) {
+                let i = (tasaPorcentaje / 100.0) * multiplicadorMeses;
+                let n = cuotas;
+                if (i > 0) {
+                    valorCuota = capital * (i * Math.pow(1 + i, n)) / (Math.pow(1 + i, n) - 1);
+                } else {
+                    valorCuota = capital / n;
+                }
+                infoBox.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold uppercase tracking-wider text-[10px] text-blue-800">📊 Vista Previa Francés (${modalidad}):</span>
+                        <span class="text-emerald-700 font-bold">¡Cálculo en vivo!</span>
+                    </div>
+                    <div class="pt-1 border-t border-blue-200/60">
+                        Valor de cada una de las <strong>${cuotas} cuotas</strong>: <strong class="text-blue-900">$${valorCuota.toFixed(2)}</strong>
+                    </div>
+                `;
+            } else if (tipoAmortizacion === 'gota_a_gota') {
+                let totalInteres = capital * (tasaPorcentaje / 100.0) * multiplicadorMeses;
+                let totalPagar = capital + totalInteres;
+                valorCuota = esIndefinido ? totalInteres : (totalPagar / cuotas);
+                infoBox.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold uppercase tracking-wider text-[10px] text-blue-800">📊 Vista Previa Gota a Gota (${modalidad}):</span>
+                        <span class="text-emerald-700 font-bold">Total con interés: $${totalPagar.toFixed(2)}</span>
+                    </div>
+                    <div class="pt-1 border-t border-blue-200/60">
+                        Valor de cada cuota: <strong class="text-blue-900">$${valorCuota.toFixed(2)}</strong>
+                    </div>
+                `;
+            } else {
+                valorCuota = capital * (tasaPorcentaje / 100.0) * multiplicadorMeses;
+                infoBox.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold uppercase tracking-wider text-[10px] text-blue-800">📊 Vista Previa Capital al Final (${modalidad}):</span>
+                        <span class="text-emerald-700 font-bold">Americano / Indefinido</span>
+                    </div>
+                    <div class="pt-1 border-t border-blue-200/60">
+                        Interés periódico esperado: <strong class="text-blue-900">$${valorCuota.toFixed(2)}</strong>
+                    </div>
+                `;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const modalInputs = document.querySelectorAll('#modal-nuevo-prestamo input, #modal-nuevo-prestamo select');
+            modalInputs.forEach(input => {
+                input.addEventListener('input', calcularPrestamoAutomatico);
+                input.addEventListener('change', calcularPrestamoAutomatico);
+            });
+        });
+
         function calcularPrestamoFinanciero() {
             const monto = parseFloat(document.getElementById('calc-monto').value) || 0;
             const cuotas = parseInt(document.getElementById('calc-cuotas').value) || 0;
-            const interes = parseFloat(document.getElementById('calc-interes').value) || 0;
+            const interesPorcentaje = parseFloat(document.getElementById('calc-interes').value) || 0;
+            const tipoAmortizacion = document.getElementById('calc-amortizacion').value;
+            const modalidad = document.getElementById('calc-modalidad').value;
+
+            let multiplicadorMeses = 1;
+            if (modalidad === 'BIMESTRAL') {
+                multiplicadorMeses = 2;
+            } else if (modalidad === 'TRIMESTRAL') {
+                multiplicadorMeses = 3;
+            }
 
             if (monto <= 0 || cuotas <= 0) {
                 alert('Por favor ingresa un monto y un número de cuotas válidos.');
+                return;
             }
 
-            let totalInteres = (monto * (interes / 100)) * cuotas;
-            let totalPagar = monto + totalInteres;
-            let valorCuota = totalPagar / cuotas;
+            let resultadoTexto = "";
 
-            document.getElementById('calc-resultado-cuota').value = valorCuota.toFixed(2);
+            if (tipoAmortizacion === 'interes_fijo') {
+                let interesTotal = monto * (interesPorcentaje / 100) * multiplicadorMeses;
+                let montoTotal = monto + interesTotal;
+                let valorCuota = montoTotal / cuotas;
+
+                document.getElementById('label-resultado-cuota').innerText = "Valor de Cada Cuota Fija:";
+                document.getElementById('calc-resultado-cuota').value = `$ ${valorCuota.toFixed(2)} (Total a pagar: $${montoTotal.toFixed(2)})`;
+
+            } else if (tipoAmortizacion === 'frances') {
+                let interes = (interesPorcentaje / 100) * multiplicadorMeses;
+                if (interes === 0) {
+                    resultadoTexto = (monto / cuotas).toFixed(2);
+                } else {
+                    let cuotaFija = monto * (interes * Math.pow(1 + interes, cuotas)) / (Math.pow(1 + interes, cuotas) - 1);
+                    resultadoTexto = cuotaFija.toFixed(2);
+                }
+                document.getElementById('label-resultado-cuota').innerText = "Valor de la Cuota Fija (Francés):";
+                document.getElementById('calc-resultado-cuota').value = `$ ${resultadoTexto}`;
+
+            } else if (tipoAmortizacion === 'aleman') {
+                let interes = (interesPorcentaje / 100) * multiplicadorMeses;
+                let amortizacionCapital = monto / cuotas;
+                let interesPrimerMes = monto * interes;
+                let primeraCuota = amortizacionCapital + interesPrimerMes;
+                let ultimaCuota = amortizacionCapital + (monto - (cuotas - 1) * amortizacionCapital) * interes;
+                
+                document.getElementById('label-resultado-cuota').innerText = "Cuota Inicial (Decreciente):";
+                document.getElementById('calc-resultado-cuota').value = `1ª: $${primeraCuota.toFixed(2)} -> Última: $${ultimaCuota.toFixed(2)}`;
+
+            } else if (tipoAmortizacion === 'gota_a_gota' || tipoAmortizacion === 'capital_final') {
+                let interes = (interesPorcentaje / 100) * multiplicadorMeses;
+                let totalInteres = monto * interes * cuotas;
+                let cuotaPeriodica = (monto / cuotas) + (monto * interes);
+                if (tipoAmortizacion === 'capital_final') {
+                    cuotaPeriodica = monto * interes;
+                }
+                document.getElementById('label-resultado-cuota').innerText = tipoAmortizacion === 'gota_a_gota' ? "Cuota Diaria/Periódica:" : "Cuota de Interés (Capital al final):";
+                document.getElementById('calc-resultado-cuota').value = `$ ${cuotaPeriodica.toFixed(2)} (Total interés: $${totalInteres.toFixed(2)})`;
+            }
         }
     </script>
 </body>
