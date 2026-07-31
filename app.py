@@ -65,7 +65,7 @@ class Prestamo(db.Model):
     capital_inicial = db.Column(db.Float, nullable=False)
     capital_actual = db.Column(db.Float, nullable=False, default=0.0)
     tasa_interes = db.Column(db.Float, nullable=False)
-    cuotas_totales = db.Column(db.Integer, nullable=False)
+    cuotas_totales = db.Column(db.Integer, nullable=True)  # Permitido nulo para plazos indefinidos
     modalidad = db.Column(db.String(50), default='MENSUAL')
     tipo_amortizacion = db.Column(db.String(50), default='CAPITAL AL FINAL')
     porcentaje_mora = db.Column(db.Float, default=0.0)
@@ -113,44 +113,18 @@ class SolicitudPrestamo(db.Model):
     telefono = db.Column(db.String(30), nullable=False)
     email = db.Column(db.String(120), nullable=True)
     monto_solicitado = db.Column(db.Float, nullable=False)
-    cuotas = db.Column(db.Integer, nullable=False)
+    cuotas = db.Column(db.Integer, nullable=True)
     motivo = db.Column(db.String(250), nullable=True)
     estado = db.Column(db.String(30), default='Pendiente')
     fecha_solicitud = db.Column(db.String(20), default=lambda: date.today().strftime('%Y-%m-%d'))
 
 
 # ==========================================
-# INICIALIZACIÓN Y MIGRACIONES AUTOMÁTICAS
+# INICIALIZACIÓN DE LA BASE DE DATOS
 # ==========================================
 
 with app.app_context():
     db.create_all()
-    with db.engine.connect() as conn:
-        for col_def in [
-            ("capital_actual", "FLOAT DEFAULT 0.0"),
-            ("tipo_amortizacion", "VARCHAR(50) DEFAULT 'CAPITAL AL FINAL'"),
-            ("porcentaje_mora", "FLOAT DEFAULT 0.0"),
-            ("porcentaje_comision", "FLOAT DEFAULT 0.0"),
-            ("codeudor_nombre", "VARCHAR(100)"),
-            ("codeudor_identificacion", "VARCHAR(50)"),
-            ("codeudor_telefono", "VARCHAR(30)"),
-            ("codeudor_direccion", "VARCHAR(200)")
-        ]:
-            try:
-                conn.execute(sqlalchemy.text(f"ALTER TABLE prestamo ADD COLUMN {col_def[0]} {col_def[1]}"))
-                conn.commit()
-            except Exception:
-                pass
-                
-        for col_cliente in [
-            ("ruta_id", "INTEGER"),
-            ("orden_ruta", "INTEGER DEFAULT 0")
-        ]:
-            try:
-                conn.execute(sqlalchemy.text(f"ALTER TABLE cliente ADD COLUMN {col_cliente[0]} {col_cliente[1]}"))
-                conn.commit()
-            except Exception:
-                pass
 
 
 # ==========================================
@@ -233,7 +207,13 @@ def dashboard():
     capital_prestado = db.session.query(db.func.sum(Prestamo.capital_inicial)).filter_by(estado='Activo').scalar() or 0.0
 
     prestamos_activos_lista = Prestamo.query.filter_by(estado='Activo').all()
-    total_interes_proyectado = sum(p.capital_inicial * (p.tasa_interes / 100.0) * p.cuotas_totales for p in prestamos_activos_lista)
+    
+    # Cálculo actualizado del interés proyectado considerando el multiplicador de meses por modalidad
+    total_interes_proyectado = 0.0
+    for p in prestamos_activos_lista:
+        mult_meses = 2 if p.modalidad == 'BIMESTRAL' else (3 if p.modalidad == 'TRIMESTRAL' else 1)
+        num_c = p.cuotas_totales if p.cuotas_totales else 1
+        total_interes_proyectado += p.capital_inicial * (p.tasa_interes / 100.0) * mult_meses * num_c
 
     hoy_str = date.today().strftime('%Y-%m-%d')
     cobros_hoy = (
@@ -287,10 +267,12 @@ def agregar_cliente():
         
     if request.method == 'POST':
         nombre = request.form.get('nombre')
+        apellidos = request.form.get('apellidos', '')
+        nombre_completo = f"{nombre} {apellidos}".strip()
         telefono = request.form.get('telefono')
         
         if not nombre or not telefono:
-            flash('El nombre y el teléfono son obligatorios.', 'error')
+            flash('Faltan datos obligatorios (Nombre o Teléfono).', 'error')
             return redirect(url_for('agregar_cliente'))
             
         cliente_existente = Cliente.query.filter_by(telefono=telefono).first()
@@ -298,11 +280,11 @@ def agregar_cliente():
             flash('Ya existe un cliente registrado con ese número de teléfono.', 'error')
             return redirect(url_for('agregar_cliente'))
             
-        nuevo_cliente = Cliente(nombre=nombre, telefono=telefono)
+        nuevo_cliente = Cliente(nombre=nombre_completo, telefono=telefono)
         db.session.add(nuevo_cliente)
         db.session.commit()
         
-        flash('Cliente registrado exitosamente.', 'success')
+        flash('¡Cliente registrado exitosamente!', 'success')
         return redirect(url_for('clientes'))
         
     return render_template('agregar_cliente.html')
@@ -350,26 +332,33 @@ def nuevo_prestamo():
     nombre = request.form.get('nombre')
     telefono = request.form.get('telefono')
 
+    cliente = None
     if cliente_id:
         cliente = Cliente.query.get(cliente_id)
-        if not cliente:
-            flash('El cliente seleccionado no existe.', 'error')
-            return redirect(url_for('dashboard'))
-    elif nombre and telefono:
+
+    if not cliente and nombre and telefono:
         cliente = Cliente.query.filter_by(telefono=telefono).first()
         if not cliente:
             cliente = Cliente(nombre=nombre, telefono=telefono)
             db.session.add(cliente)
             db.session.commit()
-    else:
-        flash('Debe seleccionar o registrar un cliente.', 'error')
+
+    if not cliente:
+        flash('Debe seleccionar o registrar un cliente válido.', 'error')
         return redirect(url_for('dashboard'))
 
     capital = float(request.form.get('capital', 0))
     tasa = float(request.form.get('tasa', 0))
-    cuotas_cant = int(request.form.get('cuotas', 1))
+    
+    # Manejo seguro de cuotas vacías o indefinidas
+    cuotas_raw = request.form.get('cuotas')
+    if cuotas_raw and cuotas_raw.strip() != '':
+        cuotas_cant = int(cuotas_raw)
+    else:
+        cuotas_cant = None
+
     modalidad = request.form.get('modalidad', 'MENSUAL')
-    tipo_amortizacion = request.form.get('tipo_amortizacion', 'CAPITAL AL FINAL')
+    tipo_amortizacion = request.form.get('tipo_amortizacion', 'interes_fijo')
     proximo_pago = request.form.get('proximo_pago')
     
     porcentaje_mora = float(request.form.get('mora', 0.0))
@@ -401,31 +390,141 @@ def nuevo_prestamo():
     db.session.commit()
 
     fecha_base = datetime.strptime(proximo_pago, '%Y-%m-%d')
-    interes_por_cuota = capital * (tasa / 100.0)
+    
+    # Factor multiplicador de meses según la modalidad
+    multiplicador_meses = 1
+    if modalidad == 'BIMESTRAL':
+        multiplicador_meses = 2
+    elif modalidad == 'TRIMESTRAL':
+        multiplicador_meses = 3
 
-    for i in range(1, cuotas_cant + 1):
-        if modalidad == 'MENSUAL':
-            mes = fecha_base.month - 1 + i
-            anio = fecha_base.year + mes // 12
-            mes = mes % 12 + 1
-            dia = min(fecha_base.day, [31, 29 if anio % 4 == 0 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mes-1])
-            fecha_venc = date(anio, mes, dia).strftime('%Y-%m-%d')
-        else:
-            fecha_venc = (fecha_base + timedelta(days=7 * i)).strftime('%Y-%m-%d')
+    i_tasa = (tasa / 100.0) * multiplicador_meses
 
-        cap_cuota = (capital / cuotas_cant) if tipo_amortizacion == 'FIJA' else (capital if i == cuotas_cant else 0.0)
-        val_cuota = interes_por_cuota + cap_cuota
+    # Función auxiliar para el cálculo exacto de vencimientos según modalidad
+    def calcular_fecha_vencimiento(f_base, index, mod):
+        if mod == 'DIARIO' or mod == 'DIARIO (GOTA A GOTA)':
+            return (f_base + timedelta(days=index)).strftime('%Y-%m-%d')
+        elif mod == 'SEMANAL':
+            return (f_base + timedelta(days=7 * index)).strftime('%Y-%m-%d')
+        elif mod == 'QUINCENAL':
+            return (f_base + timedelta(days=15 * index)).strftime('%Y-%m-%d')
+        elif mod == 'BIMESTRAL':
+            meses_totales = f_base.month - 1 + (2 * index)
+            anio = f_base.year + meses_totales // 12
+            mes = meses_totales % 12 + 1
+            dia = min(f_base.day, [31, 29 if anio % 4 == 0 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mes-1])
+            return date(anio, mes, dia).strftime('%Y-%m-%d')
+        elif mod == 'TRIMESTRAL':
+            meses_totales = f_base.month - 1 + (3 * index)
+            anio = f_base.year + meses_totales // 12
+            mes = meses_totales % 12 + 1
+            dia = min(f_base.day, [31, 29 if anio % 4 == 0 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mes-1])
+            return date(anio, mes, dia).strftime('%Y-%m-%d')
+        else:  # MENSUAL por defecto
+            meses_totales = f_base.month - 1 + index
+            anio = f_base.year + meses_totales // 12
+            mes = meses_totales % 12 + 1
+            dia = min(f_base.day, [31, 29 if anio % 4 == 0 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mes-1])
+            return date(anio, mes, dia).strftime('%Y-%m-%d')
 
+    # 1. Si las cuotas son indefinidas (Capital al final o solo interés)
+    if cuotas_cant is None or cuotas_cant <= 0:
+        val_cuota = capital * i_tasa
+        interes_por_cuota = val_cuota
+        cap_cuota = 0.0
         nueva_cuota = CuotaPrestamo(
             prestamo_id=prestamo.id,
-            numero_cuota=i,
-            fecha_vencimiento=fecha_venc,
+            numero_cuota=1,
+            fecha_vencimiento=proximo_pago,
             valor_cuota=val_cuota,
             interes_esperado=interes_por_cuota,
             capital_esperado=cap_cuota,
             estado='Pendiente'
         )
         db.session.add(nueva_cuota)
+
+    # 2. Si el usuario selecciona el método de CUOTA FIJA con abono a capital (Sistema Francés)
+    elif tipo_amortizacion == 'cuota_fija' or tipo_amortizacion == 'francesa':
+        n = cuotas_cant
+        if i_tasa > 0:
+            val_cuota = capital * (i_tasa * (1 + i_tasa)**n) / ((1 + i_tasa)**n - 1)
+        else:
+            val_cuota = capital / n
+
+        capital_pendiente = capital
+
+        for c_num in range(1, cuotas_cant + 1):
+            fecha_venc = calcular_fecha_vencimiento(fecha_base, c_num, modalidad)
+
+            interes_esperado = capital_pendiente * i_tasa
+            capital_esperado = val_cuota - interes_esperado
+            
+            if c_num == cuotas_cant:
+                capital_esperado = capital_pendiente
+                val_cuota = capital_esperado + interes_esperado
+
+            capital_pendiente -= capital_esperado
+
+            nueva_cuota = CuotaPrestamo(
+                prestamo_id=prestamo.id,
+                numero_cuota=c_num,
+                fecha_vencimiento=fecha_venc,
+                valor_cuota=round(val_cuota, 2),
+                interes_esperado=round(interes_esperado, 2),
+                capital_esperado=round(capital_esperado, 2),
+                estado='Pendiente'
+            )
+            db.session.add(nueva_cuota)
+
+    # 3. Método CAPITAL AL FINAL / AMERICANO (Interés fijo periódico y capital íntegro al final)
+    elif tipo_amortizacion.upper() in ['CAPITAL AL FINAL', 'CAPITAL_FINAL']:
+        interes_periodico = capital * i_tasa
+
+        for c_num in range(1, cuotas_cant + 1):
+            fecha_venc = calcular_fecha_vencimiento(fecha_base, c_num, modalidad)
+
+            if c_num < cuotas_cant:
+                capital_esperado = 0.0
+                interes_esperado = interes_periodico
+                val_cuota = interes_periodico
+            else:
+                capital_esperado = capital
+                interes_esperado = interes_periodico
+                val_cuota = capital + interes_periodico
+
+            nueva_cuota = CuotaPrestamo(
+                prestamo_id=prestamo.id,
+                numero_cuota=c_num,
+                fecha_vencimiento=fecha_venc,
+                valor_cuota=round(val_cuota, 2),
+                interes_esperado=round(interes_esperado, 2),
+                capital_esperado=round(capital_esperado, 2),
+                estado='Pendiente'
+            )
+            db.session.add(nueva_cuota)
+
+    # 4. Métodos tradicionales / Gota a Gota con valor de cuota fijo personalizado
+    else:
+        val_cuota = float(request.form.get('valor_cuota_fijo', 15000))
+        
+        interes_total_proyectado = capital * (tasa / 100.0) * multiplicador_meses
+        
+        interes_por_cuota = interes_total_proyectado / cuotas_cant
+        cap_cuota = capital / cuotas_cant
+
+        for i in range(1, cuotas_cant + 1):
+            fecha_venc = calcular_fecha_vencimiento(fecha_base, i, modalidad)
+
+            nueva_cuota = CuotaPrestamo(
+                prestamo_id=prestamo.id,
+                numero_cuota=i,
+                fecha_vencimiento=fecha_venc,
+                valor_cuota=round(cap_cuota + interes_por_cuota, 2),
+                interes_esperado=round(interes_por_cuota, 2),
+                capital_esperado=round(cap_cuota, 2),
+                estado='Pendiente'
+            )
+            db.session.add(nueva_cuota)
 
     db.session.commit()
 
@@ -439,14 +538,22 @@ def detalle_prestamo(id):
         return redirect(url_for('login'))
     
     prestamo = Prestamo.query.get_or_404(id)
-    total_intereses_esperados = prestamo.capital_inicial * (prestamo.tasa_interes / 100.0) * prestamo.cuotas_totales
+    mult_meses = 2 if prestamo.modalidad == 'BIMESTRAL' else (3 if prestamo.modalidad == 'TRIMESTRAL' else 1)
+
+    if prestamo.tipo_amortizacion.upper() in ['CAPITAL AL FINAL', 'CAPITAL_FINAL']:
+        total_intereses_esperados = (prestamo.capital_inicial * (prestamo.tasa_interes / 100.0) * mult_meses) * (prestamo.cuotas_totales or 1)
+    else:
+        total_intereses_esperados = sum(c.interes_esperado for c in prestamo.cuotas)
+
     total_abonado = sum(p.total_pago for p in prestamo.pagos)
+    saldo_total_pendiente = sum(c.capital_esperado for c in prestamo.cuotas if c.estado == 'Pendiente')
     
     return render_template(
         'detalle_prestamo.html', 
         prestamo=prestamo,
         total_intereses=total_intereses_esperados,
-        total_abonado=total_abonado
+        total_abonado=total_abonado,
+        saldo_total_pendiente=saldo_total_pendiente
     )
 
 
@@ -581,12 +688,15 @@ def solicitudes():
 @app.route('/portal/solicitud', methods=['GET', 'POST'])
 def portal_solicitud():
     if request.method == 'POST':
+        cuotas_raw = request.form.get('cuotas')
+        cuotas_val = int(cuotas_raw) if cuotas_raw and cuotas_raw.strip() != '' else None
+        
         nueva_sol = SolicitudPrestamo(
             nombre=request.form.get('nombre'),
             telefono=request.form.get('telefono'),
             email=request.form.get('email'),
             monto_solicitado=float(request.form.get('monto', 0)),
-            cuotas=int(request.form.get('cuotas', 1)),
+            cuotas=cuotas_val,
             motivo=request.form.get('motivo'),
             estado='Pendiente'
         )
@@ -703,6 +813,7 @@ def borrar_ruta(id):
 @app.route('/prestamos/borrar/<int:id>', methods=['GET', 'POST'], endpoint='eliminar_prestamo')
 @app.route('/prestamos/eliminar/<int:id>', methods=['GET', 'POST'], endpoint='eliminar_prestamo_alt')
 def borrar_prestamo(id):
+    app.logger.info("Eliminando préstamo con ID %s", id)
     if 'user_id' not in session:
         return redirect(url_for('login'))
     prestamo = Prestamo.query.get_or_404(id)
