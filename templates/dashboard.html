@@ -17,7 +17,9 @@
     </style>
 </head>
 <body class="bg-slate-100 font-sans flex h-screen overflow-hidden">
-<aside class="w-80 bg-slate-900 text-white flex flex-col justify-between hidden md:flex shadow-2xl z-20 shrink-0">
+
+<!-- BARRA LATERAL (SIDEBAR) CON SOPORTE HAMBURGUESA RESPONSIVO -->
+<aside id="sidebar" class="w-80 bg-slate-900 text-white flex flex-col justify-between fixed inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 md:static transition-transform duration-300 ease-in-out shadow-2xl shrink-0">
     <div>
         <div class="flex items-center gap-3.5 px-6 py-6 border-b border-slate-800">
             <div class="w-11 h-11 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-lg font-bold shadow-lg shadow-indigo-600/30">
@@ -75,8 +77,13 @@
 </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-y-auto bg-slate-100">
-        <header class="bg-white border-b border-gray-200 px-8 py-3.5 flex justify-between items-center shadow-xs sticky top-0 z-10">
+        <!-- BARRA SUPERIOR CON BOTÓN HAMBURGUESA -->
+        <header class="bg-white border-b border-gray-200 px-6 md:px-8 py-3.5 flex justify-between items-center shadow-xs sticky top-0 z-10">
             <div class="flex items-center gap-3">
+                <!-- Botón hamburguesa visible solo en dispositivos móviles -->
+                <button id="menu-btn" class="md:hidden text-slate-600 hover:text-slate-900 focus:outline-none p-1 mr-1">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
                 <span class="text-xs font-bold uppercase tracking-wider text-slate-400">MÓDULO /</span>
                 <h2 class="text-sm font-black text-slate-800">Inicio</h2>
             </div>
@@ -525,7 +532,24 @@
 
     </main>
 
+    <!-- SCRIPT DE CONTROL PARA EL MENÚ HAMBURGUESA Y FUNCIONES -->
     <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const sidebar = document.getElementById('sidebar');
+
+        if (menuBtn && sidebar) {
+            menuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
+            });
+
+            // Cierra el menú automáticamente al hacer clic fuera de él en dispositivos móviles
+            window.addEventListener('click', (e) => {
+                if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && window.innerWidth < 768) {
+                    sidebar.classList.add('-translate-x-full');
+                }
+            });
+        }
+
         function toggleBuscador() {
             const el = document.getElementById('contenedor-busqueda');
             el.classList.toggle('hidden');
