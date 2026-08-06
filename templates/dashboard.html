@@ -62,7 +62,7 @@
             <a href="{{ url_for('reportes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'reportes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
                 <i class="fa-solid fa-chart-line w-4 text-center"></i> Reportes
             </a>
-            <button type="button" onclick="toggleModalCalculadoraFinanciera()" class="w-full flex items-center gap-3.5 px-4 py-3.5 text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl font-semibold text-xs transition-all duration-200 text-left">
+            <button type="button" onclick="toggleModalCalculadora()" class="w-full flex items-center gap-3.5 px-4 py-3.5 text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl font-semibold text-xs transition-all duration-200 text-left">
                 <i class="fa-solid fa-calculator w-4 text-center text-blue-400"></i> Calculadora
             </button>
         </nav>
@@ -76,686 +76,452 @@
     </div>
 </aside>
 
-    <main class="flex-1 flex flex-col h-screen overflow-y-auto bg-slate-100">
-        <!-- BARRA SUPERIOR CON BOTÓN HAMBURGUESA -->
-        <header class="bg-white border-b border-gray-200 px-6 md:px-8 py-3.5 flex justify-between items-center shadow-xs sticky top-0 z-10">
-            <div class="flex items-center gap-3">
-                <!-- Botón hamburguesa visible solo en dispositivos móviles -->
-                <button id="menu-btn" class="md:hidden text-slate-600 hover:text-slate-900 focus:outline-none p-1 mr-1">
-                    <i class="fa-solid fa-bars text-lg"></i>
-                </button>
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">MÓDULO /</span>
-                <h2 class="text-sm font-black text-slate-800">Inicio</h2>
+<main class="flex-1 flex flex-1 flex-col h-screen overflow-y-auto bg-slate-100">
+    <!-- BARRA SUPERIOR CON BOTÓN HAMBURGUESA -->
+    <header class="bg-white border-b border-gray-200 px-6 md:px-8 py-3.5 flex justify-between items-center shadow-xs sticky top-0 z-10">
+        <div class="flex items-center gap-3">
+            <button id="menu-btn" class="md:hidden text-slate-600 hover:text-slate-900 focus:outline-none p-1 mr-1">
+                <i class="fa-solid fa-bars text-lg"></i>
+            </button>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">MÓDULO /</span>
+            <h2 class="text-sm font-black text-slate-800">Inicio</h2>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Sistema Activo
+            </span>
+            <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs shadow-sm">
+                <i class="fa-solid fa-user"></i>
             </div>
-            <div class="flex items-center gap-3">
-                <span class="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Sistema Activo
-                </span>
-                <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs shadow-sm">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-            </div>
-        </header>
+        </div>
+    </header>
 
-        <div class="p-8 max-w-7xl mx-auto w-full space-y-6 pb-28">
+    <div class="p-8 max-w-7xl mx-auto w-full space-y-6 pb-28">
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md transition-all duration-300 animate-fade">
-                    <div class="flex justify-between items-start">
-                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clientes Activos</span>
-                        <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-                            <i class="fa-solid fa-users"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <h3 class="text-2xl font-black text-slate-800">{{ clientes_count|default(0) }}</h3>
-                        <p class="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-                            <i class="fa-solid fa-arrow-trend-up"></i> Registrados en el sistema
-                        </p>
+        <!-- TARJETAS SUPERIORES DE MÉTRICAS -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md transition-all duration-300 animate-fade">
+                <div class="flex justify-between items-start">
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clientes Activos</span>
+                    <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                        <i class="fa-solid fa-users"></i>
                     </div>
                 </div>
-
-                <div class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md transition-all duration-300 animate-fade" style="animation-delay: 0.05s;">
-                    <div class="flex justify-between items-start">
-                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Préstamos Activos</span>
-                        <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-                            <i class="fa-solid fa-file-invoice-dollar"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <h3 class="text-2xl font-black text-slate-800">{{ prestamos_activos|default(0) }}</h3>
-                        <p class="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-                            <i class="fa-solid fa-arrow-trend-up"></i> Créditos vigentes
-                        </p>
-                    </div>
-                </div>
-
-                <div class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md transition-all duration-300 animate-fade" style="animation-delay: 0.1s;">
-                    <div class="flex justify-between items-start">
-                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Prestado</span>
-                        <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
-                            <i class="fa-solid fa-sack-dollar"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <h3 class="text-xl font-black text-slate-800">${{ "{:,.2f}".format(capital_prestado|default(0)) }}</h3>
-                        <p class="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-                            <i class="fa-solid fa-arrow-trend-up"></i> Capital en circulación
-                        </p>
-                    </div>
-                </div>
-
-                <div class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md transition-all duration-300 animate-fade" style="animation-delay: 0.15s;">
-                    <div class="flex justify-between items-start">
-                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Interés</span>
-                        <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
-                            <i class="fa-solid fa-chart-line"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <h3 class="text-xl font-black text-slate-800">${{ "{:,.2f}".format(total_interes_proyectado|default(0)) }}</h3>
-                        <p class="text-[11px] text-purple-600 font-semibold mt-1">Rendimiento proyectado</p>
-                    </div>
+                <div class="mt-4">
+                    <h3 class="text-2xl font-black text-slate-800">{{ clientes_count|default(0) }}</h3>
+                    <p class="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+                        <i class="fa-solid fa-arrow-trend-up"></i> Registrados en el sistema
+                    </p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs lg:col-span-2 animate-fade" style="animation-delay: 0.2s;">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Resumen del Día</h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <div class="bg-slate-50 p-4 rounded-xl border border-gray-100">
-                            <span class="text-[11px] text-slate-400 font-bold block">Cobrado hoy</span>
-                            <span class="text-base font-black text-emerald-600 mt-1 block">${{ "{:,.2f}".format(cobros_hoy|default(0)) }}</span>
-                        </div>
-                        <div class="bg-slate-50 p-4 rounded-xl border border-gray-100">
-                            <span class="text-[11px] text-slate-400 font-bold block">Cuotas pendientes</span>
-                            <span class="text-base font-black text-slate-700 mt-1 block">0</span>
-                        </div>
-                        <div class="bg-slate-50 p-4 rounded-xl border border-gray-100">
-                            <span class="text-[11px] text-slate-400 font-bold block">En mora</span>
-                            <span class="text-base font-black text-red-500 mt-1 block">0</span>
-                        </div>
-                        <div class="bg-slate-50 p-4 rounded-xl border border-gray-100">
-                            <span class="text-[11px] text-slate-400 font-bold block">Pagos realizados</span>
-                            <span class="text-base font-black text-indigo-600 mt-1 block">0</span>
-                        </div>
+            <div class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md transition-all duration-300 animate-fade" style="animation-delay: 0.05s;">
+                <div class="flex justify-between items-start">
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Préstamos Activos</span>
+                    <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
                     </div>
                 </div>
-
-                <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs animate-fade" style="animation-delay: 0.25s;">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ingresos y Egresos</h3>
-                        <span class="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded font-bold">Mes</span>
-                    </div>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center p-3 bg-emerald-50/60 rounded-xl border border-emerald-100">
-                            <span class="text-xs font-bold text-emerald-700">Ingreso</span>
-                            <span class="text-sm font-black text-emerald-700">$0</span>
-                        </div>
-                        <div class="flex justify-between items-center p-3 bg-red-50/60 rounded-xl border border-red-100">
-                            <span class="text-xs font-bold text-red-700">Egresos</span>
-                            <span class="text-sm font-black text-red-700">$0</span>
-                        </div>
-                    </div>
+                <div class="mt-4">
+                    <h3 class="text-2xl font-black text-slate-800">{{ prestamos_activos|default(0) }}</h3>
+                    <p class="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+                        <i class="fa-solid fa-arrow-trend-up"></i> Créditos vigentes
+                    </p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs flex flex-col justify-between animate-fade relative" style="animation-delay: 0.3s;">
-                    <div>
-                        <div class="flex justify-between items-center mb-3">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Cuentas por Cobrar</h3>
-                            <div class="flex gap-2.5 text-slate-400">
-                                <button onclick="toggleBuscador()" title="Buscar cliente" class="hover:text-blue-600 transition"><i class="fa-solid fa-magnifying-glass"></i></button>
-                                <button onclick="toggleModalFiltros()" title="Filtros de búsqueda" class="hover:text-blue-600 transition"><i class="fa-solid fa-bars"></i></button>
-                                <button onclick="toggleCalendario()" title="Seleccionar fecha" class="hover:text-blue-600 transition"><i class="fa-solid fa-calendar"></i></button>
-                            </div>
-                        </div>
-
-                        <div id="contenedor-busqueda" class="hidden mb-3 transition-all">
-                            <div class="relative">
-                                <input type="text" id="input-buscar-cliente" onkeyup="filtrarClientes()" placeholder="Buscar por nombre del cliente..." class="w-full text-xs bg-slate-50 border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:border-blue-600">
-                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-                            </div>
-                        </div>
-
-                        <div id="contenedor-calendario" class="hidden mb-3">
-                            <input type="date" id="input-filtro-fecha" onchange="aplicarFiltroFecha()" class="w-full text-xs bg-slate-50 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-600">
-                        </div>
+            <div class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md transition-all duration-300 animate-fade" style="animation-delay: 0.1s;">
+                <div class="flex justify-between items-start">
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Prestado</span>
+                    <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+                        <i class="fa-solid fa-sack-dollar"></i>
                     </div>
-
-                    <div id="cuerpo-cuentas" class="text-center py-6">
-                        <div id="icono-estado-cuenta" class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl shadow-2xs">
-                            <i class="fa-solid fa-check"></i>
-                        </div>
-                        <h4 id="titulo-estado-cuenta" class="font-bold text-slate-800 text-sm">¡Excelente!</h4>
-                        <p id="texto-estado-cuenta" class="text-xs text-slate-400 mt-1">No hay cobros pendientes para hoy. Todos los pagos están al día.</p>
-                    </div>
-                    <div></div>
                 </div>
-
-                <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs flex flex-col justify-between animate-fade" style="animation-delay: 0.35s;">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Actividad Reciente</h3>
-                    <div class="text-center py-12">
-                        <div class="w-10 h-10 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <i class="fa-solid fa-clock-rotate-left"></i>
-                        </div>
-                        <p class="text-xs text-slate-400 font-medium">Sin actividad reciente</p>
-                    </div>
-                    <div></div>
-                </div>
-
-                <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs animate-fade" style="animation-delay: 0.4s;">
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ingresos Anuales</h3>
-                        <select id="select-anio" onchange="cambiarAnioGrafica()" class="text-xs bg-slate-50 border border-gray-200 font-bold px-2.5 py-1 rounded-lg text-slate-700 focus:outline-none cursor-pointer">
-                            <option value="2026">2026</option>
-                            <option value="2025">2025</option>
-                            <option value="2024">2024</option>
-                        </select>
-                    </div>
-                    <p id="label-anio-desc" class="text-[11px] text-slate-400 mb-4">Resumen de ingresos mensuales durante el año 2026.</p>
-                    
-                    <div class="h-36 flex items-end justify-between gap-1.5 pt-4 border-b border-gray-100 pb-2">
-                        {% set meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'] %}
-                        {% for i in range(12) %}
-                            {% set valor = ingresos_meses[i] | default(0) if ingresos_meses is defined else 0 %}
-                            <div class="w-full {{ 'bg-blue-600 shadow-md shadow-blue-600/20' if valor > 0 else 'bg-slate-100 hover:bg-blue-500' }} rounded-t transition-all h-{{ [valor|int * 2, 6]|max if valor > 0 else '6' }} flex items-end justify-center">
-                                <span class="text-[9px] {{ 'text-white font-bold' if valor > 0 else 'text-slate-400' }} pb-1">{{ meses[i] }}</span>
-                            </div>
-                        {% endfor %}
-                    </div>
+                <div class="mt-4">
+                    <h3 class="text-xl font-black text-slate-800">${{ "{:,.2f}".format(capital_prestado|default(0)) }}</h3>
+                    <p class="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+                        <i class="fa-solid fa-arrow-trend-up"></i> Capital en circulación
+                    </p>
                 </div>
             </div>
 
+            <div class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md transition-all duration-300 animate-fade" style="animation-delay: 0.15s;">
+                <div class="flex justify-between items-start">
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Interés</span>
+                    <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <h3 class="text-xl font-black text-slate-800">${{ "{:,.2f}".format(total_interes_proyectado|default(0)) }}</h3>
+                    <p class="text-[11px] text-purple-600 font-semibold mt-1">Rendimiento proyectado</p>
+                </div>
+            </div>
         </div>
 
-        <div id="modal-filtros" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center hidden">
-            <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl border border-gray-200 animate-fade space-y-4">
-                <div class="flex justify-between items-center border-b border-gray-100 pb-3">
-                    <h3 class="text-sm font-black text-slate-800">Filtros de búsqueda</h3>
-                    <button onclick="toggleModalFiltros()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+        <!-- SECCIÓN DE RESUMEN DEL DÍA E INGRESOS/EGRESOS -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs lg:col-span-2 animate-fade" style="animation-delay: 0.2s;">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Resumen del Día</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-gray-100">
+                        <span class="text-[11px] text-slate-400 font-bold block">Cobrado hoy</span>
+                        <span class="text-base font-black text-emerald-600 mt-1 block">${{ "{:,.2f}".format(cobros_hoy|default(0)) }}</span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-gray-100">
+                        <span class="text-[11px] text-slate-400 font-bold block">Cuotas pendientes</span>
+                        <span class="text-base font-black text-slate-700 mt-1 block">0</span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-gray-100">
+                        <span class="text-[11px] text-slate-400 font-bold block">En mora</span>
+                        <span class="text-base font-black text-red-500 mt-1 block">0</span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-gray-100">
+                        <span class="text-[11px] text-slate-400 font-bold block">Pagos realizados</span>
+                        <span class="text-base font-black text-indigo-600 mt-1 block">0</span>
+                    </div>
                 </div>
-                <p class="text-xs text-slate-400">Ajusta los criterios para filtrar las cuentas por cobrar.</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs animate-fade" style="animation-delay: 0.25s;">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ingresos y Egresos</h3>
+                    <span class="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded font-bold">Mes</span>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center p-3 bg-emerald-50/60 rounded-xl border border-emerald-100">
+                        <span class="text-xs font-bold text-emerald-700">Ingreso</span>
+                        <span class="text-sm font-black text-emerald-700">$0</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-red-50/60 rounded-xl border border-red-100">
+                        <span class="text-xs font-bold text-red-700">Egresos</span>
+                        <span class="text-sm font-black text-red-700">$0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN INFERIOR: CUENTAS POR COBRAR, ACTIVIDAD Y GRÁFICA ANUAL -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs flex flex-col justify-between animate-fade relative" style="animation-delay: 0.3s;">
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Cuentas por Cobrar</h3>
+                        <div class="flex gap-2.5 text-slate-400">
+                            <button onclick="toggleBuscador()" title="Buscar cliente" class="hover:text-blue-600 transition"><i class="fa-solid fa-magnifying-glass"></i></button>
+                            <button onclick="toggleModalFiltros()" title="Filtros de búsqueda" class="hover:text-blue-600 transition"><i class="fa-solid fa-bars"></i></button>
+                            <button onclick="toggleCalendario()" title="Seleccionar fecha" class="hover:text-blue-600 transition"><i class="fa-solid fa-calendar"></i></button>
+                        </div>
+                    </div>
+
+                    <div id="contenedor-busqueda" class="hidden mb-3 transition-all">
+                        <div class="relative">
+                            <input type="text" id="input-buscar-cliente" onkeyup="filtrarClientes()" placeholder="Buscar por nombre del cliente..." class="w-full text-xs bg-slate-50 border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:border-blue-600">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                        </div>
+                    </div>
+
+                    <div id="contenedor-calendario" class="hidden mb-3">
+                        <input type="date" id="input-filtro-fecha" onchange="aplicarFiltroFecha()" class="w-full text-xs bg-slate-50 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-600">
+                    </div>
+                </div>
+
+                <div id="cuerpo-cuentas" class="text-center py-6">
+                    <div id="icono-estado-cuenta" class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl shadow-2xs">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <h4 id="titulo-estado-cuenta" class="font-bold text-slate-800 text-sm">¡Excelente!</h4>
+                    <p id="texto-estado-cuenta" class="text-xs text-slate-400 mt-1">No hay cobros pendientes para hoy. Todos los pagos están al día.</p>
+                </div>
+                <div></div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs flex flex-col justify-between animate-fade" style="animation-delay: 0.35s;">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Actividad Reciente</h3>
+                <div class="text-center py-12">
+                    <div class="w-10 h-10 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <p class="text-xs text-slate-400 font-medium">Sin actividad reciente</p>
+                </div>
+                <div></div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs animate-fade" style="animation-delay: 0.4s;">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ingresos Anuales</h3>
+                    <select id="select-anio" onchange="cambiarAnioGrafica()" class="text-xs bg-slate-50 border border-gray-200 font-bold px-2.5 py-1 rounded-lg text-slate-700 focus:outline-none cursor-pointer">
+                        <option value="2026">2026</option>
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                    </select>
+                </div>
+                <p id="label-anio-desc" class="text-[11px] text-slate-400 mb-4">Resumen de ingresos mensuales durante el año 2026.</p>
                 
-                <div class="space-y-3 text-xs">
+                <div class="h-36 flex items-end justify-between gap-1.5 pt-4 border-b border-gray-100 pb-2">
+                    {% set meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'] %}
+                    {% for i in range(12) %}
+                        {% set valor = ingresos_meses[i] | default(0) if ingresos_meses is defined else 0 %}
+                        <div class="w-full {{ 'bg-blue-600 shadow-md shadow-blue-600/20' if valor > 0 else 'bg-slate-100 hover:bg-blue-500' }} rounded-t transition-all h-{{ [valor|int * 2, 6]|max if valor > 0 else '6' }} flex items-end justify-center">
+                            <span class="text-[9px] {{ 'text-white font-bold' if valor > 0 else 'text-slate-400' }} pb-1">{{ meses[i] }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL DE FILTROS -->
+    <div id="modal-filtros" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center hidden">
+        <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl border border-gray-200 animate-fade space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-100 pb-3">
+                <h3 class="text-sm font-black text-slate-800">Filtros de búsqueda</h3>
+                <button onclick="toggleModalFiltros()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p class="text-xs text-slate-400">Ajusta los criterios para filtrar las cuentas por cobrar.</p>
+            
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="font-bold text-slate-600 block mb-1">Fecha Desde</label>
+                    <input type="date" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-600 block mb-1">Fecha Hasta</label>
+                    <input type="date" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-600 block mb-1">Estado</label>
+                    <select class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600">
+                        <option>Todo</option>
+                        <option>Pendiente</option>
+                        <option>Al día</option>
+                        <option>En mora</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="font-bold text-slate-600 block mb-1">Modalidad</label>
+                    <select class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600">
+                        <option>Todas</option>
+                        <option value="DIARIO">DIARIO (Gota a Gota)</option>
+                        <option value="SEMANAL">SEMANAL</option>
+                        <option value="BISEMANAL">BISEMANAL</option>
+                        <option value="QUINCENAL">QUINCENAL</option>
+                        <option value="15 Y FIN DE MES">15 Y FIN DE MES</option>
+                        <option value="MENSUAL">MENSUAL</option>
+                        <option value="BIMESTRAL">BIMESTRAL</option>
+                        <option value="TRIMESTRAL">TRIMESTRAL</option>
+                        <option value="SEMESTRAL">SEMESTRAL</option>
+                        <option value="ANUAL">ANUAL</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="font-bold text-slate-600 block mb-1">Ruta</label>
+                    <select class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600">
+                        <option>Todas</option>
+                        <option>Ruta Principal</option>
+                        <option>Ruta Norte</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-3 border-t border-gray-100">
+                <button onclick="toggleModalFiltros()" class="px-4 py-2 border border-gray-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition">Limpiar</button>
+                <button onclick="toggleModalFiltros()" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-600/30 hover:bg-blue-700 transition">Aplicar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CALCULADORA FINANCIERA -->
+    <div id="modalCalculadora" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
+            
+            <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center text-white">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-calculator text-lg"></i>
+                    <h3 class="font-bold text-base">Calculadora Financiera Avanzada</h3>
+                </div>
+                <button onclick="toggleModalCalculadora()" class="text-indigo-200 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-4 flex-1">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="font-bold text-slate-600 block mb-1">Fecha Desde</label>
-                        <input type="date" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600">
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Monto del Préstamo *</label>
+                        <input type="number" id="calc-monto" placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
                     </div>
                     <div>
-                        <label class="font-bold text-slate-600 block mb-1">Fecha Hasta</label>
-                        <input type="date" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600">
-                    </div>
-                    <div>
-                        <label class="font-bold text-slate-600 block mb-1">Estado</label>
-                        <select class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600">
-                            <option>Todo</option>
-                            <option>Pendiente</option>
-                            <option>Al día</option>
-                            <option>En mora</option>
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Tipo de Amortización *</label>
+                        <select id="calc-amortizacion" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
+                            <option value="cuota_fija" selected>Cuota Fija (Abono a Capital e Intereses)</option>
+                            <option value="gota_a_gota">Gota a Gota / Diario</option>
+                            <option value="capital_final">Capital al Final (Americano / Indefinido)</option>
                         </select>
                     </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="font-bold text-slate-600 block mb-1">Modalidad</label>
-                        <select class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600">
-                            <option>Todas</option>
-                            <option value="DIARIO">DIARIO (Gota a Gota)</option>
-                            <option value="SEMANAL">SEMANAL</option>
-                            <option value="BISEMANAL">BISEMANAL</option>
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Modalidad de Pago *</label>
+                        <select id="calc-modalidad" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
+                            <option value="MENSUAL" selected>MENSUAL</option>
                             <option value="QUINCENAL">QUINCENAL</option>
-                            <option value="15 Y FIN DE MES">15 Y FIN DE MES</option>
-                            <option value="MENSUAL">MENSUAL</option>
+                            <option value="SEMANAL">SEMANAL</option>
+                            <option value="DIARIO">DIARIO</option>
                             <option value="BIMESTRAL">BIMESTRAL</option>
                             <option value="TRIMESTRAL">TRIMESTRAL</option>
-                            <option value="SEMESTRAL">SEMESTRAL</option>
-                            <option value="ANUAL">ANUAL</option>
                         </select>
                     </div>
                     <div>
-                        <label class="font-bold text-slate-600 block mb-1">Ruta</label>
-                        <select class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600">
-                            <option>Todas</option>
-                            <option>Ruta Principal</option>
-                            <option>Ruta Norte</option>
-                        </select>
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1"># Cuotas</label>
+                        <input type="number" id="calc-cuotas" placeholder="Ej. 4" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
                     </div>
                 </div>
 
-                <div class="flex justify-between items-center pt-3 border-t border-gray-100">
-                    <button onclick="toggleModalFiltros()" class="px-4 py-2 border border-gray-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition">Limpiar</button>
-                    <button onclick="toggleModalFiltros()" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-600/30 hover:bg-blue-700 transition">Aplicar</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- MODAL DE NUEVO PRÉSTAMO CON CÁLCULO AUTOMÁTICO EN VIVO -->
-        <div id="modal-nuevo-prestamo" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center hidden">
-            <div class="bg-white w-full max-w-2xl rounded-2xl p-6 shadow-2xl border border-gray-200 animate-fade space-y-4 max-h-[90vh] overflow-y-auto">
-                <div class="flex justify-between items-center border-b border-gray-100 pb-3">
-                    <h3 class="text-sm font-black text-slate-800">Registrar Nuevo Préstamo</h3>
-                    <button onclick="toggleModalPrestamo()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-                
-                <form action="{{ url_for('nuevo_prestamo') }}" method="POST" class="space-y-4 text-xs">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="font-bold text-slate-600 block mb-1">Nombre del Cliente *</label>
-                        <input type="text" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="nombre" placeholder="Ej. Juan Pérez" required>
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1" id="label-resultado-cuota">Valor Calculado de Cuota *</label>
+                        <input type="text" id="calc-resultado-cuota" readonly placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-gray-700 font-bold text-sm">
                     </div>
                     <div>
-                        <label class="font-bold text-slate-600 block mb-1">Teléfono *</label>
-                        <input type="text" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="telefono" placeholder="Ej. 3001234567" required>
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Primer Pago *</label>
+                        <input type="date" id="calc-fecha" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
                     </div>
+                </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="font-bold text-slate-600 block mb-1">Capital Inicial ($) *</label>
-                            <input type="number" step="any" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="capital" placeholder="200000" required>
-                        </div>
-                        <div>
-                            <label class="font-bold text-slate-600 block mb-1">Tasa de Interés Total (%) *</label>
-                            <input type="number" step="any" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="tasa" placeholder="20" required>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="font-bold text-slate-600 block mb-1">Número de Cuotas *</label>
-                            <input type="number" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="cuotas" placeholder="24" required>
-                        </div>
-                        <div>
-                            <label class="font-bold text-slate-600 block mb-1">Modalidad *</label>
-                            <select class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="modalidad">
-                                <option value="DIARIO" selected>DIARIO (Gota a Gota)</option>
-                                <option value="SEMANAL">SEMANAL</option>
-                                <option value="BISEMANAL">BISEMANAL</option>
-                                <option value="QUINCENAL">QUINCENAL</option>
-                                <option value="15 Y FIN DE MES">15 Y FIN DE MES</option>
-                                <option value="MENSUAL">MENSUAL</option>
-                                <option value="BIMESTRAL">BIMESTRAL</option>
-                                <option value="TRIMESTRAL">TRIMESTRAL</option>
-                                <option value="SEMESTRAL">SEMESTRAL</option>
-                                <option value="ANUAL">ANUAL</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="font-bold text-slate-600 block mb-1">Tipo de Amortización *</label>
-                            <select class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="tipo_amortizacion">
-                                <option value="interes_fijo" selected>Cuota Fija con Interés Fijo / Tasa Plana (Ej. 200k a 24 cuotas de 10k)</option>
-                                <option value="frances">Cuota Fija (Francés Compuesto)</option>
-                                <option value="aleman">Disminución de Cuota (Alemán)</option>
-                                <option value="gota_a_gota">Gota a Gota tradicional</option>
-                                <option value="CAPITAL AL FINAL">Capital al final (Americano)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="font-bold text-slate-600 block mb-1">Fecha del Próximo Pago *</label>
-                            <input type="date" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="proximo_pago" required>
-                        </div>
-                    </div>
-
-                    <hr class="border-gray-100">
-                    <h4 class="font-black text-slate-800">Datos Adicionales</h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="font-bold text-slate-600 block mb-1">Porcentaje de Mora (%)</label>
-                            <input type="number" step="any" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="mora" value="5">
-                        </div>
-                        <div>
-                            <label class="font-bold text-slate-600 block mb-1">Porcentaje de Comisión (%)</label>
-                            <input type="number" step="any" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="comision" value="0.00">
-                        </div>
-                    </div>
-
-                    <hr class="border-gray-100">
-                    <h4 class="font-black text-slate-800">Datos del Codeudor (Opcional)</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="font-bold text-slate-600 block mb-1">Nombre del Codeudor</label>
-                        <input type="text" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="codeudor_nombre" placeholder="Nombre completo del codeudor">
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="font-bold text-slate-600 block mb-1">Número de Identificación</label>
-                            <input type="text" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="codeudor_cedula" placeholder="Cédula del codeudor">
-                        </div>
-                        <div>
-                            <label class="font-bold text-slate-600 block mb-1">Teléfono</label>
-                            <input type="text" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="codeudor_telefono" placeholder="Teléfono del codeudor">
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Interés (%) *</label>
+                        <div class="relative">
+                            <input type="number" step="any" id="calc-interes" placeholder="7" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm pr-8">
+                            <span class="absolute right-3 top-2.5 text-gray-400 font-bold text-sm">%</span>
                         </div>
                     </div>
-
-                    <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
-                        <button type="button" onclick="toggleModalPrestamo()" class="px-4 py-2 border border-gray-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition">Cancelar</button>
-                        <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-600/30 hover:bg-blue-700 transition">Guardar Préstamo</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- MODAL CALCULADORA FINANCIERA AVANZADA -->
-        <div id="modalCalculadora" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
-                
-                <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center text-white">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-calculator text-lg"></i>
-                        <h3 class="font-bold text-base">Calculadora Financiera Avanzada</h3>
-                    </div>
-                    <button onclick="toggleModalCalculadoraFinanciera()" class="text-indigo-200 hover:text-white transition">
-                        <i class="fa-solid fa-xmark text-lg"></i>
-                    </button>
-                </div>
-
-                <div class="p-6 overflow-y-auto space-y-4 flex-1">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Monto del Préstamo *</label>
-                            <input type="number" id="calc-monto" placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Tipo de Amortización *</label>
-                            <select id="calc-amortizacion" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
-                                <option value="interes_fijo" selected>Cuota Fija con Interés Fijo / Tasa Plana</option>
-                                <option value="frances">Cuota Fija (Francés)</option>
-                                <option value="aleman">Disminuir Cuota (Alemán)</option>
-                                <option value="gota_a_gota">Gota a Gota / Diario</option>
-                                <option value="capital_final">Capital al Final (Americano)</option>
-                            </select>
+                    <div>
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Comisión (%)</label>
+                        <div class="relative">
+                            <input type="number" step="any" id="calc-comision" placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm pr-8">
+                            <span class="absolute right-3 top-2.5 text-gray-400 font-bold text-sm">%</span>
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Modalidad de Pago *</label>
-                            <select id="calc-modalidad" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
-                                <option value="DIARIO" selected>DIARIO</option>
-                                <option value="SEMANAL">SEMANAL</option>
-                                <option value="BISEMANAL">BISEMANAL</option>
-                                <option value="QUINCENAL">QUINCENAL</option>
-                                <option value="15 Y FIN DE MES">15 Y FIN DE MES</option>
-                                <option value="MENSUAL">MENSUAL</option>
-                                <option value="BIMESTRAL">BIMESTRAL</option>
-                                <option value="TRIMESTRAL">TRIMESTRAL</option>
-                                <option value="SEMESTRAL">SEMESTRAL</option>
-                                <option value="ANUAL">ANUAL</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1"># Cuotas *</label>
-                            <input type="number" id="calc-cuotas" placeholder="0" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1" id="label-resultado-cuota">Valor de Cuota / Primera Cuota *</label>
-                            <input type="text" id="calc-resultado-cuota" readonly placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-gray-700 font-bold text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Primer Pago *</label>
-                            <input type="date" id="calc-fecha" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Interés Total (%) *</label>
-                            <div class="relative">
-                                <input type="number" step="any" id="calc-interes" placeholder="20" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm pr-8">
-                                <span class="absolute right-3 top-2.5 text-gray-400 font-bold text-sm">%</span>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Comisión (%)</label>
-                            <div class="relative">
-                                <input type="number" step="any" id="calc-comision" placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm pr-8">
-                                <span class="absolute right-3 top-2.5 text-gray-400 font-bold text-sm">%</span>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="text-[11px] text-gray-400 italic" id="calc-descripcion-metodo">Ejemplo: $200,000 a 24 cuotas diarias con 20% de interés total arroja cuotas exactas de $10,000.</p>
-                </div>
-
-                <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
-                    <button onclick="toggleModalCalculadoraFinanciera()" class="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-xl transition text-sm">
-                        Cerrar
-                    </button>
-                    <button onclick="calcularPrestamoFinanciero()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition text-sm">
-                        CALCULAR PRÉSTAMO
-                    </button>
                 </div>
             </div>
+
+            <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                <button onclick="toggleModalCalculadora()" class="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-xl transition text-sm">
+                    Cerrar
+                </button>
+                <button onclick="calcularPrestamoFinanciero()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition text-sm">
+                    CALCULAR PRÉSTAMO
+                </button>
+            </div>
         </div>
+    </div>
+</main>
 
-    </main>
+<!-- SCRIPTS DE CONTROL -->
+<script>
+    const menuBtn = document.getElementById('menu-btn');
+    const sidebar = document.getElementById('sidebar');
 
-    <!-- SCRIPT DE CONTROL PARA EL MENÚ HAMBURGUESA Y FUNCIONES -->
-    <script>
-        const menuBtn = document.getElementById('menu-btn');
-        const sidebar = document.getElementById('sidebar');
-
-        if (menuBtn && sidebar) {
-            menuBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('-translate-x-full');
-            });
-
-            // Cierra el menú automáticamente al hacer clic fuera de él en dispositivos móviles
-            window.addEventListener('click', (e) => {
-                if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && window.innerWidth < 768) {
-                    sidebar.classList.add('-translate-x-full');
-                }
-            });
-        }
-
-        function toggleBuscador() {
-            const el = document.getElementById('contenedor-busqueda');
-            el.classList.toggle('hidden');
-        }
-
-        function toggleCalendario() {
-            const el = document.getElementById('contenedor-calendario');
-            el.classList.toggle('hidden');
-        }
-
-        function toggleModalFiltros() {
-            const modal = document.getElementById('modal-filtros');
-            modal.classList.toggle('hidden');
-        }
-
-        function toggleModalPrestamo() {
-            const modal = document.getElementById('modal-nuevo-prestamo');
-            modal.classList.toggle('hidden');
-        }
-
-        function toggleModalCalculadoraFinanciera() {
-            const modal = document.getElementById('modalCalculadora');
-            if (modal.classList.contains('hidden')) {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-            } else {
-                modal.classList.remove('flex');
-                modal.classList.add('hidden');
-            }
-        }
-
-        function cambiarAnioGrafica() {
-            const anio = document.getElementById('select-anio').value;
-            document.getElementById('label-anio-desc').innerText = `Resumen de ingresos mensuales durante el año ${anio}.`;
-        }
-
-        function filtrarClientes() {}
-        function aplicarFiltroFecha() {}
-
-        function calcularPrestamoAutomatico() {
-            const capitalInput = document.querySelector('#modal-nuevo-prestamo input[name="capital"]');
-            const tasaInput = document.querySelector('#modal-nuevo-prestamo input[name="tasa"]');
-            const cuotasInput = document.querySelector('#modal-nuevo-prestamo input[name="cuotas"]');
-            const tipoAmortizacionSelect = document.querySelector('#modal-nuevo-prestamo select[name="tipo_amortizacion"]');
-            const modalidadSelect = document.querySelector('#modal-nuevo-prestamo select[name="modalidad"]');
-
-            if (!capitalInput || !tasaInput || !tipoAmortizacionSelect) return;
-
-            const capital = parseFloat(capitalInput.value) || 0;
-            const tasaPorcentaje = parseFloat(tasaInput.value) || 0;
-            const cuotas = parseInt(cuotasInput.value) || 0;
-            const tipoAmortizacion = tipoAmortizacionSelect.value;
-            const modalidad = modalidadSelect ? modalidadSelect.value : 'MENSUAL';
-
-            let multiplicadorMeses = 1;
-            if (modalidad === 'BIMESTRAL') {
-                multiplicadorMeses = 2;
-            } else if (modalidad === 'TRIMESTRAL') {
-                multiplicadorMeses = 3;
-            }
-
-            let infoBox = document.getElementById('info-calculo-automatico');
-            if (!infoBox) {
-                infoBox = document.createElement('div');
-                infoBox.id = 'info-calculo-automatico';
-                infoBox.className = 'bg-blue-50 border border-blue-200 text-blue-900 p-3 rounded-xl text-xs space-y-1 font-medium';
-                const refElement = capitalInput.closest('form').querySelector('div:has(input[name="proximo_pago"])') || tipoAmortizacionSelect.closest('div');
-                if (refElement) {
-                    refElement.parentNode.insertBefore(infoBox, refElement);
-                }
-            }
-
-            if (capital <= 0) {
-                infoBox.innerHTML = `<span class="font-bold text-blue-700">💡 Automatización:</span> Ingresa el capital inicial para ver el cálculo.`;
-                return;
-            }
-
-            let valorCuota = 0;
-            let esIndefinido = (cuotas <= 0 || isNaN(cuotas));
-
-            if (tipoAmortizacion === 'interes_fijo' && !esIndefinido) {
-                let interesTotal = capital * (tasaPorcentaje / 100.0) * multiplicadorMeses;
-                let montoTotal = capital + interesTotal;
-                valorCuota = montoTotal / cuotas;
-                infoBox.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold uppercase tracking-wider text-[10px] text-blue-800">📊 Vista Previa Cuota Fija / Tasa Plana (${modalidad}):</span>
-                        <span class="text-emerald-700 font-bold">¡Cálculo en vivo!</span>
-                    </div>
-                    <div class="pt-1 border-t border-blue-200/60">
-                        Valor de cada una de las <strong>${cuotas} cuotas</strong>: <strong class="text-blue-900">$${valorCuota.toFixed(2)}</strong> (Total a pagar: $${montoTotal.toFixed(2)})
-                    </div>
-                `;
-            } else if (tipoAmortizacion === 'frances' && !esIndefinido) {
-                let i = (tasaPorcentaje / 100.0) * multiplicadorMeses;
-                let n = cuotas;
-                if (i > 0) {
-                    valorCuota = capital * (i * Math.pow(1 + i, n)) / (Math.pow(1 + i, n) - 1);
-                } else {
-                    valorCuota = capital / n;
-                }
-                infoBox.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold uppercase tracking-wider text-[10px] text-blue-800">📊 Vista Previa Francés (${modalidad}):</span>
-                        <span class="text-emerald-700 font-bold">¡Cálculo en vivo!</span>
-                    </div>
-                    <div class="pt-1 border-t border-blue-200/60">
-                        Valor de cada una de las <strong>${cuotas} cuotas</strong>: <strong class="text-blue-900">$${valorCuota.toFixed(2)}</strong>
-                    </div>
-                `;
-            } else if (tipoAmortizacion === 'gota_a_gota') {
-                let totalInteres = capital * (tasaPorcentaje / 100.0) * multiplicadorMeses;
-                let totalPagar = capital + totalInteres;
-                valorCuota = esIndefinido ? totalInteres : (totalPagar / cuotas);
-                infoBox.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold uppercase tracking-wider text-[10px] text-blue-800">📊 Vista Previa Gota a Gota (${modalidad}):</span>
-                        <span class="text-emerald-700 font-bold">Total con interés: $${totalPagar.toFixed(2)}</span>
-                    </div>
-                    <div class="pt-1 border-t border-blue-200/60">
-                        Valor de cada cuota: <strong class="text-blue-900">$${valorCuota.toFixed(2)}</strong>
-                    </div>
-                `;
-            } else {
-                valorCuota = capital * (tasaPorcentaje / 100.0) * multiplicadorMeses;
-                infoBox.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold uppercase tracking-wider text-[10px] text-blue-800">📊 Vista Previa Capital al Final (${modalidad}):</span>
-                        <span class="text-emerald-700 font-bold">Americano / Indefinido</span>
-                    </div>
-                    <div class="pt-1 border-t border-blue-200/60">
-                        Interés periódico esperado: <strong class="text-blue-900">$${valorCuota.toFixed(2)}</strong>
-                    </div>
-                `;
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const modalInputs = document.querySelectorAll('#modal-nuevo-prestamo input, #modal-nuevo-prestamo select');
-            modalInputs.forEach(input => {
-                input.addEventListener('input', calcularPrestamoAutomatico);
-                input.addEventListener('change', calcularPrestamoAutomatico);
-            });
+    if (menuBtn && sidebar) {
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
         });
 
-        function calcularPrestamoFinanciero() {
-            const monto = parseFloat(document.getElementById('calc-monto').value) || 0;
-            const cuotas = parseInt(document.getElementById('calc-cuotas').value) || 0;
-            const interesPorcentaje = parseFloat(document.getElementById('calc-interes').value) || 0;
-            const tipoAmortizacion = document.getElementById('calc-amortizacion').value;
-            const modalidad = document.getElementById('calc-modalidad').value;
-
-            let multiplicadorMeses = 1;
-            if (modalidad === 'BIMESTRAL') {
-                multiplicadorMeses = 2;
-            } else if (modalidad === 'TRIMESTRAL') {
-                multiplicadorMeses = 3;
+        window.addEventListener('click', (e) => {
+            if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && window.innerWidth < 768) {
+                sidebar.classList.add('-translate-x-full');
             }
+        });
+    }
 
-            if (monto <= 0 || cuotas <= 0) {
-                alert('Por favor ingresa un monto y un número de cuotas válidos.');
+    function toggleBuscador() {
+        const el = document.getElementById('contenedor-busqueda');
+        el.classList.toggle('hidden');
+    }
+
+    function toggleCalendario() {
+        const el = document.getElementById('contenedor-calendario');
+        el.classList.toggle('hidden');
+    }
+
+    function toggleModalFiltros() {
+        const modal = document.getElementById('modal-filtros');
+        modal.classList.toggle('hidden');
+    }
+
+    function toggleModalCalculadora() {
+        const modal = document.getElementById('modalCalculadora');
+        if (modal.classList.contains('hidden')) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        } else {
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+    }
+
+    function cambiarAnioGrafica() {
+        const anio = document.getElementById('select-anio').value;
+        document.getElementById('label-anio-desc').innerText = `Resumen de ingresos mensuales durante el año ${anio}.`;
+    }
+
+    function filtrarClientes() {}
+    function aplicarFiltroFecha() {}
+
+    function calcularPrestamoFinanciero() {
+        const monto = parseFloat(document.getElementById('calc-monto').value) || 0;
+        const cuotas = parseInt(document.getElementById('calc-cuotas').value) || 0;
+        const interesPorcentaje = parseFloat(document.getElementById('calc-interes').value) || 0;
+        const tipoAmortizacion = document.getElementById('calc-amortizacion').value;
+        const modalidad = document.getElementById('calc-modalidad').value;
+
+        let multiplicadorMeses = 1;
+        if (modalidad === 'BIMESTRAL') {
+            multiplicadorMeses = 2;
+        } else if (modalidad === 'TRIMESTRAL') {
+            multiplicadorMeses = 3;
+        }
+
+        if (monto <= 0) {
+            alert('Por favor ingresa un monto válido.');
+            return;
+        }
+
+        if (tipoAmortizacion === 'cuota_fija') {
+            if (cuotas <= 0) {
+                alert('Ingresa un número de cuotas válido para cuota fija.');
                 return;
             }
-
-            let resultadoTexto = "";
-
-            if (tipoAmortizacion === 'interes_fijo') {
-                let interesTotal = monto * (interesPorcentaje / 100) * multiplicadorMeses;
-                let montoTotal = monto + interesTotal;
-                let valorCuota = montoTotal / cuotas;
-
-                document.getElementById('label-resultado-cuota').innerText = "Valor de Cada Cuota Fija:";
-                document.getElementById('calc-resultado-cuota').value = `$ ${valorCuota.toFixed(2)} (Total a pagar: $${montoTotal.toFixed(2)})`;
-
-            } else if (tipoAmortizacion === 'frances') {
-                let interes = (interesPorcentaje / 100) * multiplicadorMeses;
-                if (interes === 0) {
-                    resultadoTexto = (monto / cuotas).toFixed(2);
-                } else {
-                    let cuotaFija = monto * (interes * Math.pow(1 + interes, cuotas)) / (Math.pow(1 + interes, cuotas) - 1);
-                    resultadoTexto = cuotaFija.toFixed(2);
-                }
-                document.getElementById('label-resultado-cuota').innerText = "Valor de la Cuota Fija (Francés):";
-                document.getElementById('calc-resultado-cuota').value = `$ ${resultadoTexto}`;
-
-            } else if (tipoAmortizacion === 'aleman') {
-                let interes = (interesPorcentaje / 100) * multiplicadorMeses;
-                let amortizacionCapital = monto / cuotas;
-                let interesPrimerMes = monto * interes;
-                let primeraCuota = amortizacionCapital + interesPrimerMes;
-                let ultimaCuota = amortizacionCapital + (monto - (cuotas - 1) * amortizacionCapital) * interes;
-                
-                document.getElementById('label-resultado-cuota').innerText = "Cuota Inicial (Decreciente):";
-                document.getElementById('calc-resultado-cuota').value = `1ª: $${primeraCuota.toFixed(2)} -> Última: $${ultimaCuota.toFixed(2)}`;
-
-            } else if (tipoAmortizacion === 'gota_a_gota' || tipoAmortizacion === 'capital_final') {
-                let interes = (interesPorcentaje / 100) * multiplicadorMeses;
-                let totalInteres = monto * interes * cuotas;
-                let cuotaPeriodica = (monto / cuotas) + (monto * interes);
-                if (tipoAmortizacion === 'capital_final') {
-                    cuotaPeriodica = monto * interes;
-                }
-                document.getElementById('label-resultado-cuota').innerText = tipoAmortizacion === 'gota_a_gota' ? "Cuota Diaria/Periódica:" : "Cuota de Interés (Capital al final):";
-                document.getElementById('calc-resultado-cuota').value = `$ ${cuotaPeriodica.toFixed(2)} (Total interés: $${totalInteres.toFixed(2)})`;
+            let i = (interesPorcentaje / 100.0) * multiplicadorMeses;
+            let n = cuotas;
+            let valorCuota = 0;
+            if (i > 0) {
+                valorCuota = monto * (i * Math.pow(1 + i, n)) / (Math.pow(1 + i, n) - 1);
+            } else {
+                valorCuota = monto / n;
             }
+
+            document.getElementById('label-resultado-cuota').innerText = "Valor de Cada Cuota Fija:";
+            document.getElementById('calc-resultado-cuota').value = `$ ${valorCuota.toFixed(2)} (x ${cuotas} cuotas)`;
+        } else if (tipoAmortizacion === 'gota_a_gota') {
+            if (cuotas <= 0) {
+                alert('Ingresa el número de cuotas para el Gota a Gota.');
+                return;
+            }
+            let totalPagar = monto + (monto * (interesPorcentaje / 100.0) * multiplicadorMeses);
+            let valorCuota = totalPagar / cuotas;
+            document.getElementById('label-resultado-cuota').innerText = "Valor de Cuota (Capital + Interés):";
+            document.getElementById('calc-resultado-cuota').value = `$ ${valorCuota.toFixed(2)} (x ${cuotas} cuotas)`;
+        } else {
+            let valorInteres = monto * (interesPorcentaje / 100.0) * multiplicadorMeses;
+            document.getElementById('label-resultado-cuota').innerText = "Interés Periódico Esperado:";
+            document.getElementById('calc-resultado-cuota').value = `$ ${valorInteres.toFixed(2)} por periodo`;
         }
-    </script>
+    }
+</script>
 </body>
 </html>
