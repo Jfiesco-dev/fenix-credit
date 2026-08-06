@@ -3,14 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pagos - Fenix Credit</title>
+    <title>Módulo de Pagos - Fenix Credit</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+    </style>
 </head>
 <body class="bg-gray-50 font-sans flex h-screen overflow-hidden">
 
 <!-- Sidebar de Navegación -->
-<aside class="w-80 bg-slate-900 text-white flex flex-col justify-between hidden md:flex shadow-2xl z-20 shrink-0">
+<aside id="sidebar" class="w-80 bg-slate-900 text-white flex flex-col justify-between fixed inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 md:static transition-transform duration-300 ease-in-out shadow-2xl shrink-0">
     <div>
         <!-- Cabecera del Sidebar -->
         <div class="flex items-center gap-3.5 px-6 py-6 border-b border-slate-800">
@@ -25,19 +34,39 @@
 
         <!-- Navegación -->
         <nav class="p-4 space-y-1.5 overflow-y-auto max-h-[calc(100vh-160px)]">
-            <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 transition"><i class="fa-solid fa-chart-pie w-4 text-center"></i> Dashboard</a>
-            <a href="{{ url_for('clientes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 transition"><i class="fa-solid fa-users w-4 text-center"></i> Clientes</a>
-            <a href="{{ url_for('prestamos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 transition"><i class="fa-solid fa-hand-holding-dollar w-4 text-center"></i> Préstamos</a>
-            <a href="{{ url_for('pagos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs bg-blue-600 text-white shadow-md shadow-blue-600/20"><i class="fa-solid fa-receipt w-4 text-center"></i> Pagos</a>
-            <a href="{{ url_for('cobranza') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 transition"><i class="fa-solid fa-comments-dollar w-4 text-center"></i> Cobranza</a>
-            <a href="{{ url_for('solicitudes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 transition"><i class="fa-solid fa-file-circle-plus w-4 text-center"></i> Solicitudes</a>
-            <a href="{{ url_for('rutas') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 transition"><i class="fa-solid fa-route w-4 text-center"></i> Rutas</a>
-            <a href="{{ url_for('contratos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 transition"><i class="fa-solid fa-file-contract w-4 text-center"></i> Contratos</a>
-            <a href="{{ url_for('caja') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 transition"><i class="fa-solid fa-wallet w-4 text-center"></i> Caja</a>
-            <a href="{{ url_for('reportes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 transition"><i class="fa-solid fa-chart-line w-4 text-center"></i> Reportes</a>
+            <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'dashboard' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                <i class="fa-solid fa-chart-pie w-4 text-center"></i> Dashboard
+            </a>
+            <a href="{{ url_for('clientes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'clientes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                <i class="fa-solid fa-users w-4 text-center"></i> Clientes
+            </a>
+            <a href="{{ url_for('prestamos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'prestamos' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                <i class="fa-solid fa-hand-holding-dollar w-4 text-center"></i> Préstamos
+            </a>
+            <a href="{{ url_for('pagos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'pagos' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                <i class="fa-solid fa-receipt w-4 text-center"></i> Pagos
+            </a>
+            <a href="{{ url_for('cobranza') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'cobranza' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                <i class="fa-solid fa-comments-dollar w-4 text-center"></i> Cobranza
+            </a>
+            <a href="{{ url_for('solicitudes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'solicitudes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                <i class="fa-solid fa-file-circle-plus w-4 text-center"></i> Solicitudes
+            </a>
+            <a href="{{ url_for('rutas') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'rutas' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                <i class="fa-solid fa-route w-4 text-center"></i> Rutas
+            </a>
+            <a href="{{ url_for('contratos') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'contratos' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                <i class="fa-solid fa-file-contract w-4 text-center"></i> Contratos
+            </a>
+            <a href="{{ url_for('caja') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'caja' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                <i class="fa-solid fa-wallet w-4 text-center"></i> Caja
+            </a>
+            <a href="{{ url_for('reportes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'reportes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
+                <i class="fa-solid fa-chart-line w-4 text-center"></i> Reportes
+            </a>
             <!-- Botón de Calculadora en el Sidebar -->
-            <button type="button" onclick="toggleModalCalculadora()" class="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 text-slate-300 hover:text-white hover:bg-slate-800/80 text-left">
-                <i class="fa-solid fa-calculator w-4 text-center"></i> Calculadora
+            <button type="button" onclick="toggleModalCalculadora()" class="w-full flex items-center gap-3.5 px-4 py-3.5 text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl font-semibold text-xs transition-all duration-200 text-left">
+                <i class="fa-solid fa-calculator w-4 text-center text-blue-400"></i> Calculadora
             </button>
         </nav>
     </div>
@@ -52,12 +81,19 @@
 
 <!-- Contenido Principal -->
 <main class="flex-1 flex flex-col h-screen overflow-y-auto">
-    <header class="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center shadow-sm">
-        <div class="flex items-center gap-4">
+    <header class="bg-white border-b border-gray-200 px-4 sm:px-8 py-4 flex justify-between items-center shadow-sm">
+        <div class="flex items-center gap-2">
+            <!-- Botón hamburguesa visible solo en móvil -->
+            <button id="menu-btn" class="md:hidden text-slate-600 hover:text-slate-900 focus:outline-none p-1 mr-1">
+                <i class="fa-solid fa-bars text-lg"></i>
+            </button>
             <h2 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-receipt mr-2 text-indigo-600"></i> Pagos Registrados</h2>
         </div>
         <div class="flex items-center gap-3">
-            <span class="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-full border border-indigo-100">Versión Ilimitada Gratuita</span>
+            <span class="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-2 rounded-xl border border-indigo-100">Versión Ilimitada Gratuita</span>
+            <div class="w-9 h-9 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-sm hidden sm:flex">
+                <i class="fa-solid fa-user"></i>
+            </div>
         </div>
     </header>
 
@@ -169,7 +205,7 @@
         <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center text-white">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-calculator text-lg"></i>
-                <h3 class="font-bold text-base">Calculadora Financiera</h3>
+                <h3 class="font-bold text-base">Calculadora Financiera Avanzada</h3>
             </div>
             <button onclick="toggleModalCalculadora()" class="text-indigo-200 hover:text-white transition">
                 <i class="fa-solid fa-xmark text-lg"></i>
@@ -186,11 +222,9 @@
                 <div>
                     <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Tipo de Amortización *</label>
                     <select id="calc-amortizacion" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
-                        <option value="" disabled selected>Seleccionar tipo</option>
-                        <option value="frances">Cuota Fija (Francés)</option>
-                        <option value="aleman">Disminuir Cuota (Alemán)</option>
-                        <option value="interes_fijo">Interés Fijo</option>
-                        <option value="capital_final">Capital al Final (Americano)</option>
+                        <option value="cuota_fija" selected>Cuota Fija (Abono a Capital e Intereses)</option>
+                        <option value="gota_a_gota">Gota a Gota / Diario</option>
+                        <option value="capital_final">Capital al Final (Americano / Indefinido)</option>
                     </select>
                 </div>
             </div>
@@ -199,23 +233,24 @@
                 <div>
                     <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Modalidad de Pago *</label>
                     <select id="calc-modalidad" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
-                        <option value="" disabled selected>Seleccionar modalidad</option>
-                        <option value="diario">Diario</option>
-                        <option value="semanal">Semanal</option>
-                        <option value="quincenal">Quincenal</option>
-                        <option value="mensual">Mensual</option>
+                        <option value="MENSUAL" selected>MENSUAL</option>
+                        <option value="QUINCENAL">QUINCENAL</option>
+                        <option value="SEMANAL">SEMANAL</option>
+                        <option value="DIARIO">DIARIO</option>
+                        <option value="BIMESTRAL">BIMESTRAL</option>
+                        <option value="TRIMESTRAL">TRIMESTRAL</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1"># Cuotas *</label>
-                    <input type="number" id="calc-cuotas" placeholder="0" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
+                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1"># Cuotas</label>
+                    <input type="number" id="calc-cuotas" placeholder="Ej. 4" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Monto de Cuotas *</label>
-                    <input type="number" id="calc-resultado-cuota" readonly placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-gray-700 font-bold text-sm">
+                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1" id="label-resultado-cuota">Valor Calculado de Cuota *</label>
+                    <input type="text" id="calc-resultado-cuota" readonly placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-gray-700 font-bold text-sm">
                 </div>
                 <div>
                     <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Primer Pago *</label>
@@ -225,21 +260,20 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Interés (%)</label>
+                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Interés (%) *</label>
                     <div class="relative">
-                        <input type="number" step="any" id="calc-interes" placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm pr-8">
+                        <input type="number" step="any" id="calc-interes" placeholder="7" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm pr-8">
                         <span class="absolute right-3 top-2.5 text-gray-400 font-bold text-sm">%</span>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Comisión</label>
+                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Comisión (%)</label>
                     <div class="relative">
                         <input type="number" step="any" id="calc-comision" placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm pr-8">
                         <span class="absolute right-3 top-2.5 text-gray-400 font-bold text-sm">%</span>
                     </div>
                 </div>
             </div>
-            <p class="text-[11px] text-gray-400 italic">Ingresa el monto, cuotas e interés para calcular el valor de la cuota automáticamente.</p>
         </div>
 
         <!-- Pie / Botón de Acción -->
@@ -248,40 +282,90 @@
                 Cerrar
             </button>
             <button onclick="calcularPrestamoFinanciero()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition text-sm">
-                CALCULAR
+                CALCULAR PRÉSTAMO
             </button>
         </div>
     </div>
 </div>
 
 <script>
-function toggleModalCalculadora() {
-    const modal = document.getElementById('modalCalculadora');
-    if (modal.classList.contains('hidden')) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    } else {
-        modal.classList.remove('flex');
-        modal.classList.add('hidden');
-    }
-}
+    // Control del sidebar hamburguesa
+    const menuBtn = document.getElementById('menu-btn');
+    const sidebar = document.getElementById('sidebar');
 
-function calcularPrestamoFinanciero() {
-    const monto = parseFloat(document.getElementById('calc-monto').value) || 0;
-    const cuotas = parseInt(document.getElementById('calc-cuotas').value) || 0;
-    const interes = parseFloat(document.getElementById('calc-interes').value) || 0;
+    if (menuBtn && sidebar) {
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+        });
 
-    if (monto <= 0 || cuotas <= 0) {
-        alert('Por favor ingresa un monto y un número de cuotas válidos.');
-        return;
+        window.addEventListener('click', (e) => {
+            if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && window.innerWidth < 768) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
     }
 
-    let totalInteres = (monto * (interes / 100)) * cuotas;
-    let totalPagar = monto + totalInteres;
-    let valorCuota = totalPagar / cuotas;
+    function toggleModalCalculadora() {
+        const modal = document.getElementById('modalCalculadora');
+        if (modal.classList.contains('hidden')) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        } else {
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+    }
 
-    document.getElementById('calc-resultado-cuota').value = valorCuota.toFixed(2);
-}
+    function calcularPrestamoFinanciero() {
+        const monto = parseFloat(document.getElementById('calc-monto').value) || 0;
+        const cuotas = parseInt(document.getElementById('calc-cuotas').value) || 0;
+        const interesPorcentaje = parseFloat(document.getElementById('calc-interes').value) || 0;
+        const tipoAmortizacion = document.getElementById('calc-amortizacion').value;
+        const modalidad = document.getElementById('calc-modalidad').value;
+
+        let multiplicadorMeses = 1;
+        if (modalidad === 'BIMESTRAL') {
+            multiplicadorMeses = 2;
+        } else if (modalidad === 'TRIMESTRAL') {
+            multiplicadorMeses = 3;
+        }
+
+        if (monto <= 0) {
+            alert('Por favor ingresa un monto válido.');
+            return;
+        }
+
+        if (tipoAmortizacion === 'cuota_fija') {
+            if (cuotas <= 0) {
+                alert('Ingresa un número de cuotas válido para cuota fija.');
+                return;
+            }
+            let i = (interesPorcentaje / 100.0) * multiplicadorMeses;
+            let n = cuotas;
+            let valorCuota = 0;
+            if (i > 0) {
+                valorCuota = monto * (i * Math.pow(1 + i, n)) / (Math.pow(1 + i, n) - 1);
+            } else {
+                valorCuota = monto / n;
+            }
+
+            document.getElementById('label-resultado-cuota').innerText = "Valor de Cada Cuota Fija:";
+            document.getElementById('calc-resultado-cuota').value = `$ ${valorCuota.toFixed(2)} (x ${cuotas} cuotas)`;
+        } else if (tipoAmortizacion === 'gota_a_gota') {
+            if (cuotas <= 0) {
+                alert('Ingresa el número de cuotas para el Gota a Gota.');
+                return;
+            }
+            let totalPagar = monto + (monto * (interesPorcentaje / 100.0) * multiplicadorMeses);
+            let valorCuota = totalPagar / cuotas;
+            document.getElementById('label-resultado-cuota').innerText = "Valor de Cuota (Capital + Interés):";
+            document.getElementById('calc-resultado-cuota').value = `$ ${valorCuota.toFixed(2)} (x ${cuotas} cuotas)`;
+        } else {
+            let valorInteres = monto * (interesPorcentaje / 100.0) * multiplicadorMeses;
+            document.getElementById('label-resultado-cuota').innerText = "Interés Periódico Esperado:";
+            document.getElementById('calc-resultado-cuota').value = `$ ${valorInteres.toFixed(2)} por periodo`;
+        }
+    }
 </script>
 
 </body>
