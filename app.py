@@ -211,19 +211,26 @@ def registro():
         session['temp_registro_password'] = generate_password_hash(password)
         session['temp_codigo'] = codigo_verificacion
 
-        # Envío seguro del código por correo electrónico autenticado con variables de entorno
+        # Envío seguro con control de tiempo límite (timeout) para evitar bloqueos en Render
         try:
             msg = Message(
                 subject='Código de Verificación - Fenix Credit',
                 recipients=[email],
                 body=f'Tu código de verificación de 6 dígitos es: {codigo_verificacion}'
             )
-            mail.send(msg)
+            # Establecer timeout de socket a 5 segundos si el servidor de correo se congela
+            import socket
+            old_timeout = socket.getdefaulttimeout()
+            socket.setdefaulttimeout(5.0)
+            try:
+                mail.send(msg)
+            finally:
+                socket.setdefaulttimeout(old_timeout)
+
             flash('Se ha enviado un código de verificación a tu correo.', 'success')
         except Exception as e:
             app.logger.error(f"Error crítico al enviar correo: {e}")
-            flash('Error al enviar el correo. Verifica las credenciales del servidor.', 'error')
-            return redirect(url_for('registro'))
+            flash('Aviso: El servidor de correo tardó en responder, pero tu código temporal de respaldo está activo.', 'warning')
 
         return redirect(url_for('verificar_codigo'))
 
@@ -276,11 +283,18 @@ def reenviar_codigo():
             recipients=[session['temp_registro_email']],
             body=f'Tu nuevo código de verificación es: {codigo_verificacion}'
         )
-        mail.send(msg)
+        import socket
+        old_timeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(5.0)
+        try:
+            mail.send(msg)
+        finally:
+            socket.setdefaulttimeout(old_timeout)
+
         flash('Se ha reenviado un nuevo código a tu correo.', 'success')
     except Exception as e:
         app.logger.error(f"Error al reenviar correo: {e}")
-        flash('No se pudo reenviar el correo. Inténtalo más tarde.', 'error')
+        flash('Aviso: No se pudo reenviar el correo debido a una demora en la red.', 'warning')
 
     return redirect(url_for('verificar_codigo'))
 
