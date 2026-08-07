@@ -16,13 +16,17 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'prestamos.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Configuración de Correo (Opcional)
-app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
-app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+# ==========================================
+# CONFIGURACIÓN SEGURA DE CORREO (USANDO VARIABLES DE ENTORNO)
+# ==========================================
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'tu_correo@gmail.com')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'tu_contrasena_de_aplicacion')
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME', 'tu_correo@gmail.com')
+app.config['MAIL_USE_SSL'] = False
+# Se leen directamente de las variables de entorno del sistema operativo por seguridad
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
 
 db = SQLAlchemy(app)
 mail = Mail(app)
@@ -66,13 +70,12 @@ class Prestamo(db.Model):
     capital_inicial = db.Column(db.Float, nullable=False)
     capital_actual = db.Column(db.Float, nullable=False, default=0.0)
     tasa_interes = db.Column(db.Float, nullable=False)
-    cuotas_totales = db.Column(db.Integer, nullable=True)  # Permitido nulo para plazos indefinidos
+    cuotas_totales = db.Column(db.Integer, nullable=True)
     modalidad = db.Column(db.String(50), default='MENSUAL')
     tipo_amortizacion = db.Column(db.String(50), default='CAPITAL AL FINAL')
     porcentaje_mora = db.Column(db.Float, default=0.0)
     porcentaje_comision = db.Column(db.Float, default=0.0)
     
-    # Datos del Codeudor
     codeudor_nombre = db.Column(db.String(100), nullable=True)
     codeudor_identificacion = db.Column(db.String(50), nullable=True)
     codeudor_telefono = db.Column(db.String(30), nullable=True)
@@ -161,7 +164,7 @@ def validar_password(pwd):
 
 
 # ==========================================
-# RUTAS DE AUTENTICACIÓN
+# RUTAS DE AUTENTICACIÓN Y REGISTRO CON CÓDIGO
 # ==========================================
 
 @app.route('/', methods=['GET', 'POST'])
@@ -181,8 +184,14 @@ def login():
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+        email = request.form.get('email')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+
+        # Validación estricta de contraseñas coincidentes
+        if password != confirm_password:
+            flash('Invalido: Las contraseñas no coinciden.', 'error')
+            return redirect(url_for('registro'))
 
         error_pwd = validar_password(password)
         if error_pwd:
@@ -194,19 +203,86 @@ def registro():
             flash('Este correo ya está registrado.', 'error')
             return redirect(url_for('registro'))
 
-        hashed_password = generate_password_hash(password)
+        # Generar código aleatorio de 6 dígitos
+        codigo_verificacion = f"{random.randint(0, 999999):06d}"
 
-        nuevo_usuario = Usuario(
-            email=email,
-            password=hashed_password
-        )
-        db.session.add(nuevo_usuario)
-        db.session.commit()
+        # Guardar datos provisionales en la sesión para validarlos en el siguiente paso
+        session['temp_registro_email'] = email
+        session['temp_registro_password'] = generate_password_hash(password)
+        session['temp_codigo'] = codigo_verificacion
 
-        flash('¡Registro exitoso! Ya puedes iniciar sesión.', 'success')
-        return redirect(url_for('login'))
+        # Envío seguro del código por correo electrónico autenticado con variables de entorno
+        try:
+            msg = Message(
+                subject='Código de Verificación - Fenix Credit',
+                recipients=[email],
+                body=f'Tu código de verificación de 6 dígitos es: {codigo_verificacion}'
+            )
+            mail.send(msg)
+            flash('Se ha enviado un código de verificación a tu correo.', 'success')
+        except Exception as e:
+            app.logger.error(f"Error crítico al enviar correo: {e}")
+            flash('Error al enviar el correo. Verifica las credenciales del servidor.', 'error')
+            return redirect(url_for('registro'))
+
+        return redirect(url_for('verificar_codigo'))
 
     return render_template('registro.html')
+
+
+@app.route('/verificar-codigo', methods=['GET', 'POST'])
+def verificar_codigo():
+    if 'temp_registro_email' not in session:
+        flash('Por favor, completa el registro primero.', 'error')
+        return redirect(url_for('registro'))
+
+    if request.method == 'POST':
+        codigo_ingresado = request.form.get('codigo')
+
+        if codigo_ingresado == session.get('temp_codigo'):
+            # Crear el usuario en la base de datos de manera definitiva
+            nuevo_usuario = Usuario(
+                email=session['temp_registro_email'],
+                password=session['temp_registro_password']
+            )
+            db.session.add(nuevo_usuario)
+            db.session.commit()
+
+            # Limpiar datos temporales de la sesión
+            session.pop('temp_registro_email', None)
+            session.pop('temp_registro_password', None)
+            session.pop('temp_codigo', None)
+
+            flash('¡Cuenta verificada y creada exitosamente! Ya puedes iniciar sesión.', 'success')
+            return redirect(url_for('login'))
+        else:
+            flash('Código incorrecto o inválido. Inténtalo de nuevo.', 'error')
+
+    return render_template('verificar_codigo.html')
+
+
+@app.route('/reenviar-codigo', methods=['POST'])
+def reenviar_codigo():
+    if 'temp_registro_email' not in session:
+        flash('Sesión expirada. Regístrate de nuevo.', 'error')
+        return redirect(url_for('registro'))
+
+    codigo_verificacion = f"{random.randint(0, 999999):06d}"
+    session['temp_codigo'] = codigo_verificacion
+
+    try:
+        msg = Message(
+            subject='Nuevo Código de Verificación - Fenix Credit',
+            recipients=[session['temp_registro_email']],
+            body=f'Tu nuevo código de verificación es: {codigo_verificacion}'
+        )
+        mail.send(msg)
+        flash('Se ha reenviado un nuevo código a tu correo.', 'success')
+    except Exception as e:
+        app.logger.error(f"Error al reenviar correo: {e}")
+        flash('No se pudo reenviar el correo. Inténtalo más tarde.', 'error')
+
+    return redirect(url_for('verificar_codigo'))
 
 
 # ==========================================
@@ -231,7 +307,6 @@ def dashboard():
             mult_meses = obtener_multiplicador_meses(p.modalidad)
             total_interes_proyectado += (p.capital_inicial * (p.tasa_interes / 100.0) * mult_meses) * (p.cuotas_totales or 1)
         else:
-            # Sumar exactamente los intereses esperados de las cuotas calculadas de cada préstamo
             total_interes_proyectado += sum(c.interes_esperado for c in p.cuotas)
 
     hoy_str = date.today().strftime('%Y-%m-%d')
@@ -526,7 +601,6 @@ def nuevo_prestamo():
             db.session.add(nueva_cuota)
 
     else:
-        # CORREGIDO (GOTA A GOTA REAL): La tasa ingresada (ej. 20%) es el porcentaje TOTAL de ganancia
         interes_total_esperado = capital * (tasa / 100.0)
         cap_cuota = capital / cuotas_cant
         interes_por_cuota = interes_total_esperado / cuotas_cant
@@ -931,6 +1005,34 @@ def reportes():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     return render_template('reportes.html')
+
+
+# ==========================================
+# RUTAS DE EXPORTACIÓN A EXCEL
+# ==========================================
+
+@app.route('/exportar-cartera-excel')
+def exportar_cartera_excel():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    flash('Módulo de exportación de cartera en desarrollo.', 'info')
+    return redirect(url_for('reportes'))
+
+
+@app.route('/exportar-pagos-excel')
+def exportar_pagos_excel():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    flash('Módulo de exportación de pagos en desarrollo.', 'info')
+    return redirect(url_for('reportes'))
+
+
+@app.route('/exportar-morosos-excel')
+def exportar_morosos_excel():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    flash('Módulo de exportación de morosos en desarrollo.', 'info')
+    return redirect(url_for('reportes'))
 
 
 # ==========================================
