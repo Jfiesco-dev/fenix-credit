@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Verificar Código - Fenix Credit</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Verificación de Cuenta</h2>
+        
+        <!-- Mensajes flash -->
+        with messages = get_flashed_messages(with_categories=true)
+            if messages
+                for category, message in messages
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                endfor
+            endif
+        endwith
+
+        <p>Hemos enviado un código de 6 dígitos a tu correo electrónico. Ingrésalo a continuación para activar tu cuenta.</p>
+
+        <form method="POST" action="{{ url_for('verificar_codigo') }}">
+            <div class="form-group">
+                <label for="codigo">Código de Verificación:</label>
+                <input type="text" id="codigo" name="codigo" required maxlength="6" placeholder="123456" pattern="\d{6}">
+            </div>
+            <button type="submit" class="btn btn-primary">Verificar Cuenta</button>
+        </form>
+
+        <form method="POST" action="{{ url_for('reenviar_codigo') }}" style="margin-top: 15px;">
+            <button type="submit" class="btn btn-secondary">Reenviar Código</button>
+        </form>
+    </div>
+</body>
+</html>
