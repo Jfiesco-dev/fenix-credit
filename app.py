@@ -193,7 +193,7 @@ def validar_password(pwd):
 
 
 # ==========================================
-# RUTAS DE AUTENTICACIÓN Y REGISTRO CON CÓDIGO
+# RUTAS DE AUTENTICACIÓN Y REGISTRO DIRECTO
 # ==========================================
 
 @app.route('/', methods=['GET', 'POST'])
@@ -232,83 +232,28 @@ def registro():
             flash('Este correo ya está registrado.', 'error')
             return redirect(url_for('registro'))
 
-        # Generar código aleatorio de 6 dígitos
-        codigo_verificacion = f"{random.randint(0, 999999):06d}"
-
-        # Guardar datos provisionales en la sesión para validarlos en el siguiente paso
-        session['temp_registro_email'] = email
-        session['temp_registro_password'] = generate_password_hash(password)
-        session['temp_codigo'] = codigo_verificacion
-
-        # Envío del código vía la API HTTPS de Brevo (funciona en el plan gratuito de Render)
-        enviado = enviar_correo(
-            destinatario=email,
-            asunto='Código de Verificación - Fenix Credit',
-            cuerpo_texto=f'Tu código de verificación de 6 dígitos es: {codigo_verificacion}'
+        # Crear el usuario directamente en la base de datos sin verificación por correo[cite: 5, 6]
+        nuevo_usuario = Usuario(
+            email=email,
+            password=generate_password_hash(password)
         )
+        db.session.add(nuevo_usuario)
+        db.session.commit()
 
-        if enviado:
-            flash('Se ha enviado un código de verificación a tu correo.', 'success')
-        else:
-            flash(f'No pudimos enviar el correo automáticamente. Tu código de verificación es: {codigo_verificacion}', 'warning')
-
-        return redirect(url_for('verificar_codigo'))
+        flash('¡Cuenta creada exitosamente! Ya puedes iniciar sesión.', 'success')
+        return redirect(url_for('login'))
 
     return render_template('registro.html')
 
 
 @app.route('/verificar-codigo', methods=['GET', 'POST'])
 def verificar_codigo():
-    if 'temp_registro_email' not in session:
-        flash('Por favor, completa el registro primero.', 'error')
-        return redirect(url_for('registro'))
-
-    if request.method == 'POST':
-        codigo_ingresado = request.form.get('codigo')
-
-        if codigo_ingresado == session.get('temp_codigo'):
-            # Crear el usuario en la base de datos de manera definitiva
-            nuevo_usuario = Usuario(
-                email=session['temp_registro_email'],
-                password=session['temp_registro_password']
-            )
-            db.session.add(nuevo_usuario)
-            db.session.commit()
-
-            # Limpiar datos temporales de la sesión
-            session.pop('temp_registro_email', None)
-            session.pop('temp_registro_password', None)
-            session.pop('temp_codigo', None)
-
-            flash('¡Cuenta verificada y creada exitosamente! Ya puedes iniciar sesión.', 'success')
-            return redirect(url_for('login'))
-        else:
-            flash('Código incorrecto o inválido. Inténtalo de nuevo.', 'error')
-
-    return render_template('verificar_codigo.html')
+    return redirect(url_for('login'))
 
 
 @app.route('/reenviar-codigo', methods=['POST'])
 def reenviar_codigo():
-    if 'temp_registro_email' not in session:
-        flash('Sesión expirada. Regístrate de nuevo.', 'error')
-        return redirect(url_for('registro'))
-
-    codigo_verificacion = f"{random.randint(0, 999999):06d}"
-    session['temp_codigo'] = codigo_verificacion
-
-    enviado = enviar_correo(
-        destinatario=session['temp_registro_email'],
-        asunto='Nuevo Código de Verificación - Fenix Credit',
-        cuerpo_texto=f'Tu nuevo código de verificación es: {codigo_verificacion}'
-    )
-
-    if enviado:
-        flash('Se ha reenviado un nuevo código a tu correo.', 'success')
-    else:
-        flash(f'No pudimos enviar el correo automáticamente. Tu código de verificación es: {codigo_verificacion}', 'warning')
-
-    return redirect(url_for('verificar_codigo'))
+    return redirect(url_for('login'))
 
 
 # ==========================================
