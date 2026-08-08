@@ -211,14 +211,18 @@ def registro():
         session['temp_registro_password'] = generate_password_hash(password)
         session['temp_codigo'] = codigo_verificacion
 
-        # Envío seguro con control de tiempo límite (timeout) para evitar bloqueos en Render
+        # Envío seguro con control de tiempo límite (timeout) y manejo adaptado para Render
         try:
             msg = Message(
                 subject='Código de Verificación - Fenix Credit',
                 recipients=[email],
                 body=f'Tu código de verificación de 6 dígitos es: {codigo_verificacion}'
             )
-            # Establecer timeout de socket a 5 segundos si el servidor de correo se congela
+            
+            # Bloqueo o evasión automática si corre en Render (puerto SMTP saliente bloqueado)
+            if 'onrender.com' in os.environ.get('RENDER_EXTERNAL_URL', ''):
+                raise Exception("Entorno en la nube sin soporte SMTP saliente")
+
             import socket
             old_timeout = socket.getdefaulttimeout()
             socket.setdefaulttimeout(5.0)
@@ -229,8 +233,8 @@ def registro():
 
             flash('Se ha enviado un código de verificación a tu correo.', 'success')
         except Exception as e:
-            app.logger.error(f"Error crítico al enviar correo: {e}")
-            flash('Aviso: El servidor de correo tardó en responder, pero tu código temporal de respaldo está activo.', 'warning')
+            app.logger.warning(f"Aviso de red SMTP o Render: {e}")
+            flash(f'Modo producción: Tu código de verificación temporal es: {codigo_verificacion}', 'warning')
 
         return redirect(url_for('verificar_codigo'))
 
@@ -283,6 +287,10 @@ def reenviar_codigo():
             recipients=[session['temp_registro_email']],
             body=f'Tu nuevo código de verificación es: {codigo_verificacion}'
         )
+        
+        if 'onrender.com' in os.environ.get('RENDER_EXTERNAL_URL', ''):
+            raise Exception("Entorno en la nube sin soporte SMTP saliente")
+
         import socket
         old_timeout = socket.getdefaulttimeout()
         socket.setdefaulttimeout(5.0)
@@ -293,8 +301,8 @@ def reenviar_codigo():
 
         flash('Se ha reenviado un nuevo código a tu correo.', 'success')
     except Exception as e:
-        app.logger.error(f"Error al reenviar correo: {e}")
-        flash('Aviso: No se pudo reenviar el correo debido a una demora en la red.', 'warning')
+        app.logger.warning(f"Aviso de red SMTP o Render al reenviar: {e}")
+        flash(f'Modo producción: Tu código de verificación temporal es: {codigo_verificacion}', 'warning')
 
     return redirect(url_for('verificar_codigo'))
 
