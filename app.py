@@ -1,8 +1,8 @@
 from datetime import date, datetime, timedelta
 import os
 import random
+import requests
 from flask import Flask, flash, redirect, render_template, request, session, url_for
-from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
 import sqlalchemy
@@ -17,19 +17,48 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'pr
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # ==========================================
-# CONFIGURACIÓN SEGURA DE CORREO (USANDO VARIABLES DE ENTORNO)
+# CONFIGURACIÓN DE CORREO (API HTTPS DE BREVO)
 # ==========================================
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USE_SSL'] = False
-# Se leen directamente de las variables de entorno del sistema operativo por seguridad
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
+# Render bloquea el tráfico saliente por los puertos SMTP (25, 465, 587) en los
+# servicios web gratuitos desde el 26/09/2025, por lo que Flask-Mail (SMTP) nunca
+# logra conectar y las peticiones se quedan colgadas o terminan en timeout/caída.
+# Brevo (antes Sendinblue) envía correos vía HTTPS (puerto 443), que Render sí permite.
+BREVO_API_KEY = os.environ.get('BREVO_API_KEY')
+BREVO_SENDER_EMAIL = os.environ.get('BREVO_SENDER_EMAIL', os.environ.get('MAIL_USERNAME'))
+BREVO_SENDER_NAME = 'Fenix Credit'
 
 db = SQLAlchemy(app)
-mail = Mail(app)
+
+
+def enviar_correo(destinatario, asunto, cuerpo_texto):
+    """Envía un correo transaccional usando la API HTTPS de Brevo.
+    Devuelve True si Brevo confirmó el envío, False en caso contrario."""
+    if not BREVO_API_KEY:
+        app.logger.warning('BREVO_API_KEY no está configurada; no se pudo enviar el correo.')
+        return False
+    try:
+        resp = requests.post(
+            'https://api.brevo.com/v3/smtp/email',
+            headers={
+                'api-key': BREVO_API_KEY,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            json={
+                'sender': {'name': BREVO_SENDER_NAME, 'email': BREVO_SENDER_EMAIL},
+                'to': [{'email': destinatario}],
+                'subject': asunto,
+                'textContent': cuerpo_texto,
+            },
+            timeout=10,
+        )
+        if resp.status_code in (200, 201):
+            return True
+        app.logger.warning(f'Brevo respondió {resp.status_code}: {resp.text}')
+        return False
+    except requests.RequestException as e:
+        app.logger.warning(f'Error de red al enviar correo con Brevo: {e}')
+        return False
 
 
 # ==========================================
@@ -211,30 +240,17 @@ def registro():
         session['temp_registro_password'] = generate_password_hash(password)
         session['temp_codigo'] = codigo_verificacion
 
-        # Envío seguro con control de tiempo límite (timeout) y manejo adaptado para Render
-        try:
-            msg = Message(
-                subject='Código de Verificación - Fenix Credit',
-                recipients=[email],
-                body=f'Tu código de verificación de 6 dígitos es: {codigo_verificacion}'
-            )
-            
-            # Bloqueo o evasión automática si corre en Render (puerto SMTP saliente bloqueado)
-            if 'onrender.com' in os.environ.get('RENDER_EXTERNAL_URL', ''):
-                raise Exception("Entorno en la nube sin soporte SMTP saliente")
+        # Envío del código vía la API HTTPS de Brevo (funciona en el plan gratuito de Render)
+        enviado = enviar_correo(
+            destinatario=email,
+            asunto='Código de Verificación - Fenix Credit',
+            cuerpo_texto=f'Tu código de verificación de 6 dígitos es: {codigo_verificacion}'
+        )
 
-            import socket
-            old_timeout = socket.getdefaulttimeout()
-            socket.setdefaulttimeout(5.0)
-            try:
-                mail.send(msg)
-            finally:
-                socket.setdefaulttimeout(old_timeout)
-
+        if enviado:
             flash('Se ha enviado un código de verificación a tu correo.', 'success')
-        except Exception as e:
-            app.logger.warning(f"Aviso de red SMTP o Render: {e}")
-            flash(f'Modo producción: Tu código de verificación temporal es: {codigo_verificacion}', 'warning')
+        else:
+            flash(f'No pudimos enviar el correo automáticamente. Tu código de verificación es: {codigo_verificacion}', 'warning')
 
         return redirect(url_for('verificar_codigo'))
 
@@ -281,28 +297,16 @@ def reenviar_codigo():
     codigo_verificacion = f"{random.randint(0, 999999):06d}"
     session['temp_codigo'] = codigo_verificacion
 
-    try:
-        msg = Message(
-            subject='Nuevo Código de Verificación - Fenix Credit',
-            recipients=[session['temp_registro_email']],
-            body=f'Tu nuevo código de verificación es: {codigo_verificacion}'
-        )
-        
-        if 'onrender.com' in os.environ.get('RENDER_EXTERNAL_URL', ''):
-            raise Exception("Entorno en la nube sin soporte SMTP saliente")
+    enviado = enviar_correo(
+        destinatario=session['temp_registro_email'],
+        asunto='Nuevo Código de Verificación - Fenix Credit',
+        cuerpo_texto=f'Tu nuevo código de verificación es: {codigo_verificacion}'
+    )
 
-        import socket
-        old_timeout = socket.getdefaulttimeout()
-        socket.setdefaulttimeout(5.0)
-        try:
-            mail.send(msg)
-        finally:
-            socket.setdefaulttimeout(old_timeout)
-
+    if enviado:
         flash('Se ha reenviado un nuevo código a tu correo.', 'success')
-    except Exception as e:
-        app.logger.warning(f"Aviso de red SMTP o Render al reenviar: {e}")
-        flash(f'Modo producción: Tu código de verificación temporal es: {codigo_verificacion}', 'warning')
+    else:
+        flash(f'No pudimos enviar el correo automáticamente. Tu código de verificación es: {codigo_verificacion}', 'warning')
 
     return redirect(url_for('verificar_codigo'))
 
