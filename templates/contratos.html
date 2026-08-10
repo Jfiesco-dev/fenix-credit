@@ -10,7 +10,7 @@
 <body class="bg-gray-50 font-sans flex h-screen overflow-hidden">
 
 <!-- Sidebar Izquierdo -->
-<aside class="w-80 bg-slate-900 text-white flex flex-col justify-between hidden md:flex shadow-2xl z-20 shrink-0">
+<aside id="sidebar" class="w-80 bg-slate-900 text-white flex flex-col justify-between fixed inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 md:static transition-transform duration-300 ease-in-out shadow-2xl shrink-0">
     <div>
         <div class="flex items-center gap-3.5 px-6 py-6 border-b border-slate-800">
             <div class="w-11 h-11 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-lg font-bold shadow-lg shadow-indigo-600/30">
@@ -71,12 +71,15 @@
 <!-- Contenido Principal -->
 <main class="flex-1 flex flex-col h-screen overflow-y-auto">
     <!-- Header Superior -->
-    <header class="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center shadow-sm">
-        <div class="flex items-center gap-4">
-            <h2 class="text-xl font-bold text-gray-800">Contratos</h2>
+    <header class="bg-white border-b border-gray-200 px-4 sm:px-8 py-4 flex justify-between items-center shadow-sm">
+        <div class="flex items-center gap-2 sm:gap-4">
+            <button id="menu-btn" class="md:hidden text-slate-600 hover:text-slate-900 focus:outline-none p-1 mr-1">
+                <i class="fa-solid fa-bars text-lg"></i>
+            </button>
+            <h2 class="text-lg sm:text-xl font-bold text-gray-800">Contratos</h2>
         </div>
         <div class="flex items-center gap-3">
-            <span class="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-full border border-indigo-100">Versión Ilimitada Gratuita</span>
+            <span class="hidden sm:inline-block bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-full border border-indigo-100">Versión Ilimitada Gratuita</span>
         </div>
     </header>
 
@@ -114,7 +117,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 
                 <!-- Tarjeta 1: Contrato de Préstamo -->
-                <div class="border border-gray-200 rounded-2xl p-5 flex justify-between items-center hover:border-indigo-300 transition bg-gray-50/50">
+                <div class="border border-gray-200 rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-indigo-300 transition bg-gray-50/50">
                     <div class="flex gap-4 items-start">
                         <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 font-bold">
                             <i class="fa-solid fa-file-contract text-base"></i>
@@ -127,13 +130,13 @@
                             <p class="text-xs text-gray-500 leading-relaxed">Contrato formal con cláusulas legales estándar y plan de amortización.</p>
                         </div>
                     </div>
-                    <button onclick="generarContrato('prestamo')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md transition shrink-0 ml-3">
+                    <button onclick="generarContrato('prestamo')" class="w-full sm:w-auto justify-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md transition shrink-0 sm:ml-3 flex items-center gap-1.5">
                         Generar
                     </button>
                 </div>
 
                 <!-- Tarjeta 2: Acuerdo de Pago -->
-                <div class="border border-gray-200 rounded-2xl p-5 flex justify-between items-center hover:border-indigo-300 transition bg-gray-50/50">
+                <div class="border border-gray-200 rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-indigo-300 transition bg-gray-50/50">
                     <div class="flex gap-4 items-start">
                         <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 font-bold">
                             <i class="fa-solid fa-file-pen text-base"></i>
@@ -146,7 +149,7 @@
                             <p class="text-xs text-gray-500 leading-relaxed">Acuerdo simplificado con reconocimiento de deuda y calendario.</p>
                         </div>
                     </div>
-                    <button onclick="generarContrato('acuerdo')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md transition shrink-0 ml-3">
+                    <button onclick="generarContrato('acuerdo')" class="w-full sm:w-auto justify-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md transition shrink-0 sm:ml-3 flex items-center gap-1.5">
                         Generar
                     </button>
                 </div>
@@ -160,7 +163,7 @@
 <!-- MODAL 1: Ver Contrato de Préstamo -->
 <div id="modal-contrato" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center {% if not prestamo or tipo != 'prestamo' %}hidden{% endif %} p-4 overflow-y-auto">
     <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-gray-200 overflow-hidden text-xs my-8">
-        <div class="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-slate-50">
+        <div class="flex justify-between items-start gap-3 px-4 sm:px-6 py-4 border-b border-gray-100 bg-slate-50">
             <div>
                 <h4 class="font-black text-slate-800 uppercase tracking-wider text-sm">Contrato de Préstamo</h4>
                 <p class="text-[11px] text-gray-400">Documento generado para el préstamo seleccionado.</p>
@@ -191,7 +194,7 @@
                     <p><strong>CUARTA. AMORTIZACIÓN Y VENCIMIENTO.</strong> El primer pago o cuota inicial se encuentra programado para el día <strong>{{ prestamo.proximo_pago }}</strong>.</p>
                 </div>
 
-                <div class="grid grid-cols-2 gap-8 pt-12 text-center">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 pt-12 text-center">
                     <div class="border-t border-gray-400 pt-2">
                         <strong class="block">EL PRESTAMISTA</strong>
                         <span class="text-gray-500">Fenix Credit (Firma Autorizada)</span>
@@ -205,7 +208,7 @@
             {% endif %}
         </div>
 
-        <div class="flex justify-between px-6 py-4 border-t bg-slate-50">
+        <div class="flex flex-wrap gap-3 justify-between px-4 sm:px-6 py-4 border-t bg-slate-50">
             <button onclick="window.print()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition flex items-center gap-2">
                 <i class="fa-solid fa-print"></i> Imprimir / Descargar PDF
             </button>
@@ -217,7 +220,7 @@
 <!-- MODAL 2: Ver Acuerdo de Pago -->
 <div id="modal-acuerdo" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center {% if not prestamo or tipo != 'acuerdo' %}hidden{% endif %} p-4 overflow-y-auto">
     <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-gray-200 overflow-hidden text-xs my-8">
-        <div class="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-slate-50">
+        <div class="flex justify-between items-start gap-3 px-4 sm:px-6 py-4 border-b border-gray-100 bg-slate-50">
             <div>
                 <h4 class="font-black text-slate-800 uppercase tracking-wider text-sm">Acuerdo de Pago</h4>
                 <p class="text-[11px] text-gray-400">Documento simplificado generado para el préstamo seleccionado.</p>
@@ -239,7 +242,7 @@
                     <p>Se establece un compromiso formal de pago fraccionado en <strong>{{ prestamo.cuotas_totales }} cuotas</strong> de modalidad <strong>{{ prestamo.modalidad }}</strong>, iniciando formalmente el <strong>{{ prestamo.proximo_pago }}</strong>.</p>
                 </div>
 
-                <div class="grid grid-cols-2 gap-8 pt-12 text-center">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 pt-12 text-center">
                     <div class="border-t border-gray-400 pt-2">
                         <strong class="block">EL PRESTAMISTA</strong>
                         <span class="text-gray-500">Fenix Credit</span>
@@ -253,7 +256,7 @@
             {% endif %}
         </div>
 
-        <div class="flex justify-between px-6 py-4 border-t bg-slate-50">
+        <div class="flex flex-wrap gap-3 justify-between px-4 sm:px-6 py-4 border-t bg-slate-50">
             <button onclick="window.print()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition flex items-center gap-2">
                 <i class="fa-solid fa-print"></i> Imprimir / Descargar PDF
             </button>
@@ -262,22 +265,20 @@
     </div>
 </div>
 
-<!-- MODAL CALCULADORA FINANCIERA -->
+<!-- Modal Calculadora Financiera Avanzada -->
 <div id="modalCalculadora" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
         
-        <!-- Cabecera -->
         <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center text-white">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-calculator text-lg"></i>
-                <h3 class="font-bold text-base">Calculadora Financiera</h3>
+                <h3 class="font-bold text-base">Calculadora Financiera Avanzada</h3>
             </div>
             <button onclick="toggleModalCalculadora()" class="text-indigo-200 hover:text-white transition">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
         </div>
 
-        <!-- Cuerpo del Formulario -->
         <div class="p-6 overflow-y-auto space-y-4 flex-1">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -287,11 +288,9 @@
                 <div>
                     <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Tipo de Amortización *</label>
                     <select id="calc-amortizacion" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
-                        <option value="" disabled selected>Seleccionar tipo</option>
-                        <option value="frances">Cuota Fija (Francés)</option>
-                        <option value="aleman">Disminuir Cuota (Alemán)</option>
-                        <option value="interes_fijo">Interés Fijo</option>
-                        <option value="capital_final">Capital al Final (Americano)</option>
+                        <option value="cuota_fija" selected>Cuota Fija (Abono a Capital e Intereses)</option>
+                        <option value="gota_a_gota">Gota a Gota / Diario</option>
+                        <option value="capital_final">Capital al Final (Americano / Indefinido)</option>
                     </select>
                 </div>
             </div>
@@ -300,23 +299,24 @@
                 <div>
                     <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Modalidad de Pago *</label>
                     <select id="calc-modalidad" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
-                        <option value="" disabled selected>Seleccionar modalidad</option>
-                        <option value="diario">Diario</option>
-                        <option value="semanal">Semanal</option>
-                        <option value="quincenal">Quincenal</option>
-                        <option value="mensual">Mensual</option>
+                        <option value="MENSUAL" selected>MENSUAL</option>
+                        <option value="QUINCENAL">QUINCENAL</option>
+                        <option value="SEMANAL">SEMANAL</option>
+                        <option value="DIARIO">DIARIO</option>
+                        <option value="BIMESTRAL">BIMESTRAL</option>
+                        <option value="TRIMESTRAL">TRIMESTRAL</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1"># Cuotas *</label>
-                    <input type="number" id="calc-cuotas" placeholder="0" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
+                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1"># Cuotas</label>
+                    <input type="number" id="calc-cuotas" placeholder="Ej. 4" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm">
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Monto de Cuotas *</label>
-                    <input type="number" id="calc-resultado-cuota" readonly placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-gray-700 font-bold text-sm">
+                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1" id="label-resultado-cuota">Valor Calculado de Cuota *</label>
+                    <input type="text" id="calc-resultado-cuota" readonly placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-gray-700 font-bold text-sm">
                 </div>
                 <div>
                     <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Primer Pago *</label>
@@ -326,36 +326,49 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Interés (%)</label>
+                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Interés (%) *</label>
                     <div class="relative">
-                        <input type="number" step="any" id="calc-interes" placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm pr-8">
+                        <input type="number" step="any" id="calc-interes" placeholder="7" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm pr-8">
                         <span class="absolute right-3 top-2.5 text-gray-400 font-bold text-sm">%</span>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Comisión</label>
+                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Comisión (%)</label>
                     <div class="relative">
                         <input type="number" step="any" id="calc-comision" placeholder="0.00" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm pr-8">
                         <span class="absolute right-3 top-2.5 text-gray-400 font-bold text-sm">%</span>
                     </div>
                 </div>
             </div>
-            <p class="text-[11px] text-gray-400 italic">Ingresa el monto, cuotas e interés para calcular el valor de la cuota automáticamente.</p>
         </div>
 
-        <!-- Pie / Botón de Acción -->
         <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
             <button onclick="toggleModalCalculadora()" class="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-xl transition text-sm">
                 Cerrar
             </button>
             <button onclick="calcularPrestamoFinanciero()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition text-sm">
-                CALCULAR
+                CALCULAR PRÉSTAMO
             </button>
         </div>
     </div>
 </div>
 
 <script>
+    const menuBtn = document.getElementById('menu-btn');
+    const sidebar = document.getElementById('sidebar');
+
+    if (menuBtn && sidebar) {
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+        });
+
+        window.addEventListener('click', (e) => {
+            if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && window.innerWidth < 768) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
+    }
+
     function generarContrato(tipo) {
         const prestamoId = document.getElementById('selectPrestamo').value;
         if (!prestamoId) {
@@ -370,7 +383,6 @@
         window.location.href = "{{ url_for('contratos') }}";
     }
 
-    // Funciones de la Calculadora Financiera
     function toggleModalCalculadora() {
         const modal = document.getElementById('modalCalculadora');
         if (modal.classList.contains('hidden')) {
@@ -385,18 +397,52 @@
     function calcularPrestamoFinanciero() {
         const monto = parseFloat(document.getElementById('calc-monto').value) || 0;
         const cuotas = parseInt(document.getElementById('calc-cuotas').value) || 0;
-        const interes = parseFloat(document.getElementById('calc-interes').value) || 0;
+        const interesPorcentaje = parseFloat(document.getElementById('calc-interes').value) || 0;
+        const tipoAmortizacion = document.getElementById('calc-amortizacion').value;
+        const modalidad = document.getElementById('calc-modalidad').value;
 
-        if (monto <= 0 || cuotas <= 0) {
-            alert('Por favor ingresa un monto y un número de cuotas válidos.');
+        let multiplicadorMeses = 1;
+        if (modalidad === 'BIMESTRAL') {
+            multiplicadorMeses = 2;
+        } else if (modalidad === 'TRIMESTRAL') {
+            multiplicadorMeses = 3;
+        }
+
+        if (monto <= 0) {
+            alert('Por favor ingresa un monto válido.');
             return;
         }
 
-        let totalInteres = (monto * (interes / 100)) * cuotas;
-        let totalPagar = monto + totalInteres;
-        let valorCuota = totalPagar / cuotas;
+        if (tipoAmortizacion === 'cuota_fija') {
+            if (cuotas <= 0) {
+                alert('Ingresa un número de cuotas válido para cuota fija.');
+                return;
+            }
+            let i = (interesPorcentaje / 100.0) * multiplicadorMeses;
+            let n = cuotas;
+            let valorCuota = 0;
+            if (i > 0) {
+                valorCuota = monto * (i * Math.pow(1 + i, n)) / (Math.pow(1 + i, n) - 1);
+            } else {
+                valorCuota = monto / n;
+            }
 
-        document.getElementById('calc-resultado-cuota').value = valorCuota.toFixed(2);
+            document.getElementById('label-resultado-cuota').innerText = "Valor de Cada Cuota Fija:";
+            document.getElementById('calc-resultado-cuota').value = `$ ${valorCuota.toFixed(2)} (x ${cuotas} cuotas)`;
+        } else if (tipoAmortizacion === 'gota_a_gota') {
+            if (cuotas <= 0) {
+                alert('Ingresa el número de cuotas para el Gota a Gota.');
+                return;
+            }
+            let totalPagar = monto + (monto * (interesPorcentaje / 100.0) * multiplicadorMeses);
+            let valorCuota = totalPagar / cuotas;
+            document.getElementById('label-resultado-cuota').innerText = "Valor de Cuota (Capital + Interés):";
+            document.getElementById('calc-resultado-cuota').value = `$ ${valorCuota.toFixed(2)} (x ${cuotas} cuotas)`;
+        } else {
+            let valorInteres = monto * (interesPorcentaje / 100.0) * multiplicadorMeses;
+            document.getElementById('label-resultado-cuota').innerText = "Interés Periódico Esperado:";
+            document.getElementById('calc-resultado-cuota').value = `$ ${valorInteres.toFixed(2)} por periodo`;
+        }
     }
 </script>
 
