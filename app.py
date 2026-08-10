@@ -19,10 +19,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # ==========================================
 # CONFIGURACIÓN DE CORREO (API HTTPS DE BREVO)
 # ==========================================
-# Render bloquea el tráfico saliente por los puertos SMTP (25, 465, 587) en los
-# servicios web gratuitos desde el 26/09/2025, por lo que Flask-Mail (SMTP) nunca
-# logra conectar y las peticiones se quedan colgadas o terminan en timeout/caída.
-# Brevo (antes Sendinblue) envía correos vía HTTPS (puerto 443), que Render sí permite.
 BREVO_API_KEY = os.environ.get('BREVO_API_KEY')
 BREVO_SENDER_EMAIL = os.environ.get('BREVO_SENDER_EMAIL', os.environ.get('MAIL_USERNAME'))
 BREVO_SENDER_NAME = 'Fenix Credit'
@@ -86,6 +82,10 @@ class Cliente(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     telefono = db.Column(db.String(20), nullable=False)
+    cedula = db.Column(db.String(30), nullable=True)
+    direccion = db.Column(db.String(255), nullable=True)
+    ocupacion = db.Column(db.String(120), nullable=True)
+    fecha_nacimiento = db.Column(db.String(20), nullable=True)
     
     ruta_id = db.Column(db.Integer, db.ForeignKey('ruta.id'), nullable=True)
     orden_ruta = db.Column(db.Integer, default=0)
@@ -159,10 +159,46 @@ class SolicitudPrestamo(db.Model):
 with app.app_context():
     db.create_all()
 
+    with db.engine.connect() as conn:
+        columnas_existentes = {fila[1] for fila in conn.execute(sqlalchemy.text("PRAGMA table_info(cliente)"))}
+        columnas_nuevas = {
+            'cedula': 'VARCHAR(30)',
+            'direccion': 'VARCHAR(255)',
+            'ocupacion': 'VARCHAR(120)',
+            'fecha_nacimiento': 'VARCHAR(20)',
+        }
+        for nombre_columna, tipo_sql in columnas_nuevas.items():
+            if nombre_columna not in columnas_existentes:
+                conn.execute(sqlalchemy.text(f'ALTER TABLE cliente ADD COLUMN {nombre_columna} {tipo_sql}'))
+                conn.commit()
+
 
 # ==========================================
 # FUNCIONES AUXILIARES
 # ==========================================
+
+def normalizar_nombre(nombre):
+    return ' '.join((nombre or '').split()).strip().lower()
+
+
+def buscar_cliente_duplicado(nombre, telefono, cedula=None, excluir_id=None):
+    nombre_norm = normalizar_nombre(nombre)
+    telefono_norm = (telefono or '').strip()
+    cedula_norm = (cedula or '').strip()
+
+    query = Cliente.query
+    if excluir_id:
+        query = query.filter(Cliente.id != excluir_id)
+
+    for cliente in query.all():
+        if normalizar_nombre(cliente.nombre) == nombre_norm and nombre_norm:
+            return cliente
+        if telefono_norm and (cliente.telefono or '').strip() == telefono_norm:
+            return cliente
+        if cedula_norm and (cliente.cedula or '').strip() == cedula_norm:
+            return cliente
+    return None
+
 
 def obtener_multiplicador_meses(modalidad):
     mod = (modalidad or '').upper()
@@ -178,8 +214,36 @@ def obtener_multiplicador_meses(modalidad):
         return 1.0 / 30.0
     else:  
         return 1.0
- 
- 
+
+
+def calcular_fecha_vencimiento(f_base, index, mod):
+    mod_upper = (mod or '').upper()
+    if 'DIARIO' in mod_upper:
+        return (f_base + timedelta(days=index)).strftime('%Y-%m-%d')
+    elif 'SEMANAL' in mod_upper:
+        return (f_base + timedelta(days=7 * index)).strftime('%Y-%m-%d')
+    elif 'QUINCENAL' in mod_upper:
+        return (f_base + timedelta(days=15 * index)).strftime('%Y-%m-%d')
+    elif 'BIMESTRAL' in mod_upper:
+        meses_totales = f_base.month - 1 + (2 * index)
+        anio = f_base.year + meses_totales // 12
+        mes = meses_totales % 12 + 1
+        dia = min(f_base.day, [31, 29 if anio % 4 == 0 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mes-1])
+        return date(anio, mes, dia).strftime('%Y-%m-%d')
+    elif 'TRIMESTRAL' in mod_upper:
+        meses_totales = f_base.month - 1 + (3 * index)
+        anio = f_base.year + meses_totales // 12
+        mes = meses_totales % 12 + 1
+        dia = min(f_base.day, [31, 29 if anio % 4 == 0 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mes-1])
+        return date(anio, mes, dia).strftime('%Y-%m-%d')
+    else:
+        meses_totales = f_base.month - 1 + index
+        anio = f_base.year + meses_totales // 12
+        mes = meses_totales % 12 + 1
+        dia = min(f_base.day, [31, 29 if anio % 4 == 0 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mes-1])
+        return date(anio, mes, dia).strftime('%Y-%m-%d')
+
+
 def validar_password(pwd):
     if len(pwd) < 8:
         return 'La contraseña debe tener al menos 8 caracteres.'
@@ -217,7 +281,6 @@ def registro():
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
 
-        # Validación estricta de contraseñas coincidentes
         if password != confirm_password:
             flash('Invalido: Las contraseñas no coinciden.', 'error')
             return redirect(url_for('registro'))
@@ -232,7 +295,6 @@ def registro():
             flash('Este correo ya está registrado.', 'error')
             return redirect(url_for('registro'))
 
-        # Crear el usuario directamente en la base de datos sin verificación por correo[cite: 5, 6]
         nuevo_usuario = Usuario(
             email=email,
             password=generate_password_hash(password)
@@ -266,7 +328,7 @@ def dashboard():
         return redirect(url_for('login'))
 
     clientes_count = Cliente.query.count()
-    prestamos_activos = Prestamo.query.filter_by(estado='Activo').count()
+    prestamos_activos_count = Prestamo.query.filter_by(estado='Activo').count()
 
     capital_prestado = db.session.query(db.func.sum(Prestamo.capital_inicial)).filter_by(estado='Activo').scalar() or 0.0
 
@@ -281,9 +343,44 @@ def dashboard():
             total_interes_proyectado += sum(c.interes_esperado for c in p.cuotas)
 
     hoy_str = date.today().strftime('%Y-%m-%d')
-    cobros_hoy = (
+    
+    todas_las_cuentas_pendientes = []
+    cuotas_pendientes_hoy = 0
+    en_mora = 0
+
+    for p in prestamos_activos_lista:
+        cuotas_pendientes = [c for c in p.cuotas if c.estado == 'Pendiente']
+        if not cuotas_pendientes:
+            continue
+
+        proxima_cuota = min(cuotas_pendientes, key=lambda c: c.numero_cuota)
+
+        vencida = proxima_cuota.fecha_vencimiento < hoy_str
+        vence_hoy = proxima_cuota.fecha_vencimiento == hoy_str
+        info_cuota = {
+            'prestamo_id': p.id,
+            'cliente': p.cliente.nombre.lower(),
+            'cliente_display': p.cliente.nombre,
+            'telefono': p.cliente.telefono,
+            'cuota_num': proxima_cuota.numero_cuota,
+            'valor': proxima_cuota.valor_cuota,
+            'vencimiento': proxima_cuota.fecha_vencimiento,
+            'vencida': vencida,
+            'vence_hoy': vence_hoy,
+        }
+        todas_las_cuentas_pendientes.append(info_cuota)
+
+        if vence_hoy:
+            cuotas_pendientes_hoy += 1
+        if vencida:
+            en_mora += 1
+
+    todas_las_cuentas_pendientes.sort(key=lambda c: c['vencimiento'])
+    cuentas_por_cobrar_hoy = todas_las_cuentas_pendientes
+
+    cobrado_hoy = (
         db.session.query(db.func.sum(Pago.total_pago))
-        .filter_by(fecha_vencimiento=hoy_str)
+        .filter_by(fecha=hoy_str)
         .scalar()
         or 0.0
     )
@@ -306,10 +403,15 @@ def dashboard():
     return render_template(
         'dashboard.html',
         clientes_count=clientes_count,
-        prestamos_activos=prestamos_activos,
+        prestamos_activos=prestamos_activos_count,
         capital_prestado=capital_prestado,
         total_interes_proyectado=total_interes_proyectado,
-        cobros_hoy=cobros_hoy,
+        cobros_hoy=cobrado_hoy,
+        cuentas_por_cobrar=cuentas_por_cobrar_hoy,
+        todas_pendientes=todas_las_cuentas_pendientes,
+        cuotas_pendientes_hoy=cuotas_pendientes_hoy,
+        en_mora=en_mora,
+        hoy_str=hoy_str,
         ingresos_meses=ingresos_meses,
         prestamos=prestamos,
         clientes=clientes,
@@ -331,21 +433,46 @@ def agregar_cliente():
         return redirect(url_for('login'))
         
     if request.method == 'POST':
+        # 'origen' indica desde dónde se envió el formulario:
+        # 'modal'  -> modal de "Nuevo Cliente" dentro de clientes.html
+        # 'pagina' -> formulario completo de agregar_cliente.html
+        origen = request.form.get('origen', 'pagina')
+
+        def redireccion_error():
+            """Si el error viene del modal de Clientes, nos quedamos en Clientes
+            (reabriendo el modal). Si viene de la página completa, nos quedamos ahí."""
+            if origen == 'modal':
+                return redirect(url_for('clientes', abrir_modal=1))
+            return redirect(url_for('agregar_cliente'))
+
         nombre = request.form.get('nombre')
         apellidos = request.form.get('apellidos', '')
         nombre_completo = f"{nombre} {apellidos}".strip()
         telefono = request.form.get('telefono')
+        # La página completa envía el campo como 'identificacion'; el modal lo envía como 'cedula'.
+        cedula = (request.form.get('cedula') or request.form.get('identificacion') or '').strip()
+        direccion = request.form.get('direccion', '').strip()
+        ocupacion = request.form.get('ocupacion', '').strip()
+        fecha_nacimiento = request.form.get('fecha_nacimiento', '').strip()
         
         if not nombre or not telefono:
             flash('Faltan datos obligatorios (Nombre o Teléfono).', 'error')
-            return redirect(url_for('agregar_cliente'))
-            
-        cliente_existente = Cliente.query.filter_by(telefono=telefono).first()
+            return redireccion_error()
+
+        cliente_existente = buscar_cliente_duplicado(nombre_completo, telefono, cedula)
         if cliente_existente:
-            flash('Ya existe un cliente registrado con ese número de teléfono.', 'error')
-            return redirect(url_for('agregar_cliente'))
+            # CORRECCIÓN: Se mantiene en la misma pantalla desde la que se envió el formulario
+            flash(f'Ya existe un cliente registrado con ese nombre, teléfono o cédula: "{cliente_existente.nombre}" (#{cliente_existente.id}). No se creó un duplicado.', 'warning')
+            return redireccion_error()
             
-        nuevo_cliente = Cliente(nombre=nombre_completo, telefono=telefono)
+        nuevo_cliente = Cliente(
+            nombre=nombre_completo,
+            telefono=telefono,
+            cedula=cedula or None,
+            direccion=direccion or None,
+            ocupacion=ocupacion or None,
+            fecha_nacimiento=fecha_nacimiento or None,
+        )
         db.session.add(nuevo_cliente)
         db.session.commit()
         
@@ -384,7 +511,8 @@ def prestamos():
         prestamos_activos=prestamos_activos,
         capital_prestado=capital_prestado,
         cobros_hoy=cobros_hoy,
-        clientes_count=clientes_count
+        clientes_count=clientes_count,
+        clientes=Cliente.query.order_by(Cliente.nombre.asc()).all()
     )
 
 
@@ -396,21 +524,28 @@ def nuevo_prestamo():
     cliente_id = request.form.get('cliente_id')
     nombre = request.form.get('nombre')
     telefono = request.form.get('telefono')
+    cedula = request.form.get('cedula', '').strip()
 
     cliente = None
-    if cliente_id:
+    if cliente_id and cliente_id != 'nuevo':
         cliente = Cliente.query.get(cliente_id)
 
     if not cliente and nombre and telefono:
-        cliente = Cliente.query.filter_by(telefono=telefono).first()
+        cliente = buscar_cliente_duplicado(nombre, telefono, cedula)
         if not cliente:
-            cliente = Cliente(nombre=nombre, telefono=telefono)
+            cliente = Cliente(
+                nombre=' '.join(nombre.split()).strip(),
+                telefono=telefono,
+                cedula=cedula or None,
+            )
             db.session.add(cliente)
             db.session.commit()
+        else:
+            flash(f'Ya existía un cliente con esos datos ("{cliente.nombre}"), se usó ese registro en vez de crear uno nuevo.', 'success')
 
     if not cliente:
         flash('Debe seleccionar o registrar un cliente válido.', 'error')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('prestamos'))
 
     try:
         capital_raw = request.form.get('capital')
@@ -470,33 +605,6 @@ def nuevo_prestamo():
     fecha_base = datetime.strptime(proximo_pago, '%Y-%m-%d')
     multiplicador_meses = obtener_multiplicador_meses(modalidad)
     i_tasa = (tasa / 100.0) * multiplicador_meses
-
-    def calcular_fecha_vencimiento(f_base, index, mod):
-        mod_upper = (mod or '').upper()
-        if 'DIARIO' in mod_upper:
-            return (f_base + timedelta(days=index)).strftime('%Y-%m-%d')
-        elif 'SEMANAL' in mod_upper:
-            return (f_base + timedelta(days=7 * index)).strftime('%Y-%m-%d')
-        elif 'QUINCENAL' in mod_upper:
-            return (f_base + timedelta(days=15 * index)).strftime('%Y-%m-%d')
-        elif 'BIMESTRAL' in mod_upper:
-            meses_totales = f_base.month - 1 + (2 * index)
-            anio = f_base.year + meses_totales // 12
-            mes = meses_totales % 12 + 1
-            dia = min(f_base.day, [31, 29 if anio % 4 == 0 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mes-1])
-            return date(anio, mes, dia).strftime('%Y-%m-%d')
-        elif 'TRIMESTRAL' in mod_upper:
-            meses_totales = f_base.month - 1 + (3 * index)
-            anio = f_base.year + meses_totales // 12
-            mes = meses_totales % 12 + 1
-            dia = min(f_base.day, [31, 29 if anio % 4 == 0 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mes-1])
-            return date(anio, mes, dia).strftime('%Y-%m-%d')
-        else:
-            meses_totales = f_base.month - 1 + index
-            anio = f_base.year + meses_totales // 12
-            mes = meses_totales % 12 + 1
-            dia = min(f_base.day, [31, 29 if anio % 4 == 0 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mes-1])
-            return date(anio, mes, dia).strftime('%Y-%m-%d')
 
     if cuotas_cant is None or cuotas_cant <= 0:
         val_cuota = capital * i_tasa
@@ -704,8 +812,181 @@ def registrar_abono(id):
             
         prestamo.proximo_pago = nueva_fecha.strftime('%Y-%m-%d')
 
+        es_capital_al_final = prestamo.tipo_amortizacion.upper() in ['CAPITAL AL FINAL', 'CAPITAL_FINAL']
+        sin_cuotas_definidas = not prestamo.cuotas_totales or prestamo.cuotas_totales <= 0
+        if es_capital_al_final and sin_cuotas_definidas and prestamo.capital_actual > 0:
+            multiplicador_meses = obtener_multiplicador_meses(prestamo.modalidad)
+            i_tasa = (prestamo.tasa_interes / 100.0) * multiplicador_meses
+            interes_periodico = prestamo.capital_actual * i_tasa
+
+            siguiente_numero = (cuota_pendiente.numero_cuota or 0) + 1
+            cuota_siguiente = CuotaPrestamo(
+                prestamo_id=prestamo.id,
+                numero_cuota=siguiente_numero,
+                fecha_vencimiento=prestamo.proximo_pago,
+                valor_cuota=round(interes_periodico, 2),
+                interes_esperado=round(interes_periodico, 2),
+                capital_esperado=0.0,
+                estado='Pendiente'
+            )
+            db.session.add(cuota_siguiente)
+
     db.session.commit()
     flash('Pago registrado y ciclo de cobro actualizado correctamente.', 'success')
+    return redirect(url_for('detalle_prestamo', id=prestamo.id))
+
+
+@app.route('/prestamo/<int:id>/ajustar_capital', methods=['POST'])
+def ajustar_capital(id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    prestamo = Prestamo.query.get_or_404(id)
+
+    if prestamo.estado != 'Activo':
+        flash('Solo se puede ajustar el capital de préstamos activos.', 'error')
+        return redirect(url_for('detalle_prestamo', id=id))
+
+    try:
+        monto_raw = request.form.get('monto_adicional')
+        monto_adicional = float(monto_raw) if monto_raw and monto_raw.strip() != '' else 0.0
+    except ValueError:
+        flash('El monto adicional debe ser un valor numérico válido.', 'error')
+        return redirect(url_for('detalle_prestamo', id=id))
+
+    if monto_adicional <= 0:
+        flash('El monto adicional a prestar debe ser mayor a cero.', 'error')
+        return redirect(url_for('detalle_prestamo', id=id))
+
+    prestamo.capital_inicial += monto_adicional
+    prestamo.capital_actual += monto_adicional
+
+    mult_meses = obtener_multiplicador_meses(prestamo.modalidad)
+    i_tasa = (prestamo.tasa_interes / 100.0) * mult_meses
+
+    cuotas_pagadas = [c for c in prestamo.cuotas if c.estado == 'Pagada']
+    cuotas_pendientes = [c for c in prestamo.cuotas if c.estado == 'Pendiente']
+    ultimo_numero_pagado = max([c.numero_cuota for c in cuotas_pagadas], default=0)
+
+    fecha_base_str = prestamo.proximo_pago or date.today().strftime('%Y-%m-%d')
+    fecha_base = datetime.strptime(fecha_base_str, '%Y-%m-%d')
+
+    tipo = prestamo.tipo_amortizacion.upper()
+    sin_cuotas_definidas = not prestamo.cuotas_totales or prestamo.cuotas_totales <= 0
+
+    if sin_cuotas_definidas:
+        interes_periodico = prestamo.capital_actual * i_tasa
+        if cuotas_pendientes:
+            cuota_actual = cuotas_pendientes[0]
+            cuota_actual.interes_esperado = round(interes_periodico, 2)
+            cuota_actual.valor_cuota = round(interes_periodico, 2)
+        else:
+            nueva_cuota = CuotaPrestamo(
+                prestamo_id=prestamo.id,
+                numero_cuota=ultimo_numero_pagado + 1,
+                fecha_vencimiento=fecha_base_str,
+                valor_cuota=round(interes_periodico, 2),
+                interes_esperado=round(interes_periodico, 2),
+                capital_esperado=0.0,
+                estado='Pendiente'
+            )
+            db.session.add(nueva_cuota)
+    else:
+        cuotas_restantes_cant = prestamo.cuotas_totales - len(cuotas_pagadas)
+        if cuotas_restantes_cant <= 0:
+            cuotas_restantes_cant = 1
+
+        for c in cuotas_pendientes:
+            db.session.delete(c)
+
+        capital_a_amortizar = prestamo.capital_actual
+
+        if tipo in ['CUOTA_FIJA', 'FRANCESA']:
+            n = cuotas_restantes_cant
+            if i_tasa > 0:
+                val_cuota = capital_a_amortizar * (i_tasa * (1 + i_tasa) ** n) / ((1 + i_tasa) ** n - 1)
+            else:
+                val_cuota = capital_a_amortizar / n
+
+            capital_pendiente = capital_a_amortizar
+            for idx in range(1, n + 1):
+                c_num = ultimo_numero_pagado + idx
+                fecha_venc = fecha_base_str if idx == 1 else calcular_fecha_vencimiento(fecha_base, idx - 1, prestamo.modalidad)
+
+                interes_esperado = capital_pendiente * i_tasa
+                capital_esperado = val_cuota - interes_esperado
+
+                if idx == n:
+                    capital_esperado = capital_pendiente
+                    val_cuota_final = capital_esperado + interes_esperado
+                else:
+                    val_cuota_final = val_cuota
+
+                capital_pendiente -= capital_esperado
+
+                nueva_cuota = CuotaPrestamo(
+                    prestamo_id=prestamo.id,
+                    numero_cuota=c_num,
+                    fecha_vencimiento=fecha_venc,
+                    valor_cuota=round(val_cuota_final, 2),
+                    interes_esperado=round(interes_esperado, 2),
+                    capital_esperado=round(capital_esperado, 2),
+                    estado='Pendiente'
+                )
+                db.session.add(nueva_cuota)
+
+        elif tipo in ['CAPITAL AL FINAL', 'CAPITAL_FINAL']:
+            n = cuotas_restantes_cant
+            interes_periodico = capital_a_amortizar * i_tasa
+
+            for idx in range(1, n + 1):
+                c_num = ultimo_numero_pagado + idx
+                fecha_venc = fecha_base_str if idx == 1 else calcular_fecha_vencimiento(fecha_base, idx - 1, prestamo.modalidad)
+
+                if idx < n:
+                    capital_esperado = 0.0
+                    interes_esperado = interes_periodico
+                    val_cuota = interes_periodico
+                else:
+                    capital_esperado = capital_a_amortizar
+                    interes_esperado = interes_periodico
+                    val_cuota = capital_a_amortizar + interes_periodico
+
+                nueva_cuota = CuotaPrestamo(
+                    prestamo_id=prestamo.id,
+                    numero_cuota=c_num,
+                    fecha_vencimiento=fecha_venc,
+                    valor_cuota=round(val_cuota, 2),
+                    interes_esperado=round(interes_esperado, 2),
+                    capital_esperado=round(capital_esperado, 2),
+                    estado='Pendiente'
+                )
+                db.session.add(nueva_cuota)
+
+        else:
+            n = cuotas_restantes_cant
+            interes_total_esperado = capital_a_amortizar * (prestamo.tasa_interes / 100.0)
+            cap_cuota = capital_a_amortizar / n
+            interes_por_cuota = interes_total_esperado / n
+            val_cuota_calculada = cap_cuota + interes_por_cuota
+
+            for idx in range(1, n + 1):
+                c_num = ultimo_numero_pagado + idx
+                fecha_venc = fecha_base_str if idx == 1 else calcular_fecha_vencimiento(fecha_base, idx - 1, prestamo.modalidad)
+
+                nueva_cuota = CuotaPrestamo(
+                    prestamo_id=prestamo.id,
+                    numero_cuota=c_num,
+                    fecha_vencimiento=fecha_venc,
+                    valor_cuota=round(val_cuota_calculada, 2),
+                    interes_esperado=round(interes_por_cuota, 2),
+                    capital_esperado=round(cap_cuota, 2),
+                    estado='Pendiente'
+                )
+                db.session.add(nueva_cuota)
+
+    db.session.commit()
+    flash(f'Capital ajustado: se sumaron ${monto_adicional:,.2f} al préstamo y la amortización se recalculó automáticamente.', 'success')
     return redirect(url_for('detalle_prestamo', id=prestamo.id))
 
 
