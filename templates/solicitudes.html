@@ -79,20 +79,20 @@
 
 <!-- Contenido Principal -->
 <main class="flex-1 flex flex-col h-screen overflow-y-auto">
-    <header class="bg-white border-b border-gray-200 px-4 sm:px-8 py-4 flex justify-between items-center shadow-sm">
+    <header class="bg-white border-b border-gray-200 px-4 sm:px-8 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 shadow-sm">
         <div class="flex items-center gap-2">
             <!-- Botón hamburguesa visible solo en móvil -->
             <button id="menu-btn" class="md:hidden text-slate-600 hover:text-slate-900 focus:outline-none p-1 mr-1">
                 <i class="fa-solid fa-bars text-lg"></i>
             </button>
-            <h2 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-file-circle-plus mr-2 text-indigo-600"></i> Solicitudes de Préstamo</h2>
+            <h2 class="text-base sm:text-xl font-bold text-gray-800"><i class="fa-solid fa-file-circle-plus mr-2 text-indigo-600"></i> Solicitudes de Préstamo</h2>
         </div>
-        <button onclick="copiarLink()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition flex items-center gap-2">
+        <button onclick="copiarLink()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition flex items-center justify-center gap-2">
             <i class="fa-solid fa-copy"></i> Copiar Link de Registro Público
         </button>
     </header>
 
-    <div class="p-8 max-w-7xl mx-auto w-full space-y-6">
+    <div class="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6">
 
         <!-- Alertas flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -126,8 +126,43 @@
         </div>
 
         <!-- Tabla de Solicitudes -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <div class="overflow-x-auto">
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+            {% if solicitudes %}
+            <!-- Vista de tarjetas para móvil -->
+            <div class="md:hidden space-y-3">
+                {% for sol in solicitudes %}
+                <div class="border border-gray-100 rounded-xl p-4">
+                    <div class="flex justify-between items-start gap-2">
+                        <div>
+                            <p class="font-bold text-gray-800 text-sm">{{ sol.nombre }}</p>
+                            <p class="text-[11px] text-gray-400">Fecha: {{ sol.fecha_solicitud }}</p>
+                            <p class="text-xs text-gray-600 mt-1">{{ sol.telefono }}<br><span class="text-gray-400">{{ sol.email or 'Sin correo' }}</span></p>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0
+                            {{ 'bg-amber-50 text-amber-700 border border-amber-100' if sol.estado == 'Pendiente' else '' }}
+                            {{ 'bg-blue-50 text-blue-700 border border-blue-100' if sol.estado == 'Contactados' else '' }}
+                            {{ 'bg-purple-50 text-purple-700 border border-purple-100' if sol.estado == 'En Revisión' else '' }}
+                            {{ 'bg-emerald-50 text-emerald-700 border border-emerald-100' if sol.estado == 'Aprobados' else '' }}
+                            {{ 'bg-red-50 text-red-700 border border-red-100' if sol.estado == 'Rechazados' else '' }}">
+                            {{ sol.estado }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center mt-3 pt-3 border-t border-gray-50">
+                        <div>
+                            <span class="font-extrabold text-indigo-600 text-sm">${{ "{:,.2f}".format(sol.monto_solicitado) }}</span>
+                            <span class="text-xs text-gray-500 ml-1">({{ sol.cuotas }} cuotas)</span>
+                        </div>
+                        <div class="space-x-1">
+                            <a href="{{ url_for('cambiar_estado_solicitud', id=sol.id, estado='Aprobados') }}" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition" title="Aprobar"><i class="fa-solid fa-check"></i></a>
+                            <a href="{{ url_for('cambiar_estado_solicitud', id=sol.id, estado='Rechazados') }}" class="bg-red-50 hover:bg-red-100 text-red-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition" title="Rechazar"><i class="fa-solid fa-xmark"></i></a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Vista de tabla para escritorio -->
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left border-collapse text-sm">
                     <thead>
                         <tr class="border-b border-gray-100 text-xs font-bold text-gray-400 uppercase">
@@ -140,40 +175,37 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
-                        {% if solicitudes %}
-                            {% for sol in solicitudes %}
-                            <tr class="hover:bg-gray-50/50 transition">
-                                <td class="py-4 font-bold text-gray-800">{{ sol.nombre }}<br><span class="text-[11px] font-normal text-gray-400">Fecha: {{ sol.fecha_solicitud }}</span></td>
-                                <td class="py-4 text-xs text-gray-600">{{ sol.telefono }}<br><span class="text-gray-400">{{ sol.email or 'Sin correo' }}</span></td>
-                                <td class="py-4 font-extrabold text-indigo-600">${{ "{:,.2f}".format(sol.monto_solicitado) }}</td>
-                                <td class="py-4 text-xs font-semibold text-gray-700">{{ sol.cuotas }} cuotas</td>
-                                <td class="py-4">
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold 
-                                        {{ 'bg-amber-50 text-amber-700 border border-amber-100' if sol.estado == 'Pendiente' else '' }}
-                                        {{ 'bg-blue-50 text-blue-700 border border-blue-100' if sol.estado == 'Contactados' else '' }}
-                                        {{ 'bg-purple-50 text-purple-700 border border-purple-100' if sol.estado == 'En Revisión' else '' }}
-                                        {{ 'bg-emerald-50 text-emerald-700 border border-emerald-100' if sol.estado == 'Aprobados' else '' }}
-                                        {{ 'bg-red-50 text-red-700 border border-red-100' if sol.estado == 'Rechazados' else '' }}">
-                                        {{ sol.estado }}
-                                    </span>
-                                </td>
-                                <td class="py-4 text-right space-x-1">
-                                    <a href="{{ url_for('cambiar_estado_solicitud', id=sol.id, estado='Aprobados') }}" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition" title="Aprobar"><i class="fa-solid fa-check"></i></a>
-                                    <a href="{{ url_for('cambiar_estado_solicitud', id=sol.id, estado='Rechazados') }}" class="bg-red-50 hover:bg-red-100 text-red-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition" title="Rechazar"><i class="fa-solid fa-xmark"></i></a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td colspan="6" class="text-center py-12 text-gray-400 font-medium space-y-2">
-                                    <i class="fa-solid fa-inbox text-3xl text-gray-300 block mb-2"></i>
-                                    No hay solicitudes registradas con este filtro.
-                                </td>
-                            </tr>
-                        {% endif %}
+                        {% for sol in solicitudes %}
+                        <tr class="hover:bg-gray-50/50 transition">
+                            <td class="py-4 font-bold text-gray-800">{{ sol.nombre }}<br><span class="text-[11px] font-normal text-gray-400">Fecha: {{ sol.fecha_solicitud }}</span></td>
+                            <td class="py-4 text-xs text-gray-600">{{ sol.telefono }}<br><span class="text-gray-400">{{ sol.email or 'Sin correo' }}</span></td>
+                            <td class="py-4 font-extrabold text-indigo-600">${{ "{:,.2f}".format(sol.monto_solicitado) }}</td>
+                            <td class="py-4 text-xs font-semibold text-gray-700">{{ sol.cuotas }} cuotas</td>
+                            <td class="py-4">
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold 
+                                    {{ 'bg-amber-50 text-amber-700 border border-amber-100' if sol.estado == 'Pendiente' else '' }}
+                                    {{ 'bg-blue-50 text-blue-700 border border-blue-100' if sol.estado == 'Contactados' else '' }}
+                                    {{ 'bg-purple-50 text-purple-700 border border-purple-100' if sol.estado == 'En Revisión' else '' }}
+                                    {{ 'bg-emerald-50 text-emerald-700 border border-emerald-100' if sol.estado == 'Aprobados' else '' }}
+                                    {{ 'bg-red-50 text-red-700 border border-red-100' if sol.estado == 'Rechazados' else '' }}">
+                                    {{ sol.estado }}
+                                </span>
+                            </td>
+                            <td class="py-4 text-right space-x-1">
+                                <a href="{{ url_for('cambiar_estado_solicitud', id=sol.id, estado='Aprobados') }}" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition" title="Aprobar"><i class="fa-solid fa-check"></i></a>
+                                <a href="{{ url_for('cambiar_estado_solicitud', id=sol.id, estado='Rechazados') }}" class="bg-red-50 hover:bg-red-100 text-red-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition" title="Rechazar"><i class="fa-solid fa-xmark"></i></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
+            {% else %}
+            <div class="text-center py-12 text-gray-400 font-medium space-y-2">
+                <i class="fa-solid fa-inbox text-3xl text-gray-300 block mb-2"></i>
+                No hay solicitudes registradas con este filtro.
+            </div>
+            {% endif %}
         </div>
 
     </div>
