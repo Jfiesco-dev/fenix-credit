@@ -22,7 +22,7 @@
             </div>
         </div>
 
-        <!-- Navegación con los botones y la Calculadora al final -->
+        <!-- Navegación -->
         <nav class="p-4 space-y-1.5 overflow-y-auto max-h-[calc(100vh-160px)]">
             <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'dashboard' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
                 <i class="fa-solid fa-chart-pie w-4 text-center"></i> Dashboard
@@ -54,7 +54,6 @@
             <a href="{{ url_for('reportes') }}" class="flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-xs transition-all duration-200 {{ 'bg-blue-600 text-white shadow-md shadow-blue-600/20' if request.endpoint == 'reportes' else 'text-slate-300 hover:text-white hover:bg-slate-800/80' }}">
                 <i class="fa-solid fa-chart-line w-4 text-center"></i> Reportes
             </a>
-            <!-- Botón de Calculadora debajo de Reportes -->
             <button onclick="toggleModalCalculadora()" class="w-full flex items-center gap-3.5 px-4 py-3.5 text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl font-semibold text-xs transition-all duration-200 text-left">
                 <i class="fa-solid fa-calculator w-4 text-center text-blue-400"></i> Calculadora
             </button>
@@ -104,13 +103,16 @@
                 <div class="flex items-center gap-3">
                     <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">{{ prestamo.estado }}</span>
                     
-                    <!-- Botón Eliminar Préstamo Integrado -->
                     <a href="{{ url_for('eliminar_prestamo', id=prestamo.id) }}" 
                        class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5"
                        onclick="return confirm('¿Estás seguro de eliminar este préstamo y todos sus registros asociados?');"
                        title="Eliminar Préstamo">
                         <i class="fa-solid fa-trash-can"></i> Eliminar
                     </a>
+
+                    <button onclick="toggleModalAjustarCapital()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-sack-dollar"></i> Ajustar Capital
+                    </button>
 
                     <button onclick="toggleModalAbono()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-md transition flex items-center gap-2">
                         <i class="fa-solid fa-plus"></i> Registrar Pago / Abono
@@ -127,7 +129,7 @@
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
                     <p class="text-xs font-bold text-gray-400 uppercase">Cuotas Pagadas / Totales</p>
                     <h4 class="text-2xl font-extrabold text-gray-800 mt-1">
-                        {{ prestamo.pagos|length }} / {{ prestamo.cuotas_totales }}
+                        {{ prestamo.pagos|length }} / {{ prestamo.cuotas_totales if prestamo.cuotas_totales else '∞' }}
                     </h4>
                 </div>
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
@@ -180,14 +182,13 @@
             </div>
         </div>
 
-        <!-- Pestañas de Navegación e Historiales -->
+        <!-- Pestañas e Historiales -->
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <div class="flex border-b border-gray-100 gap-8 mb-6">
                 <button onclick="cambiarTab('pagos')" id="btn-pagos" class="pb-3 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition">Historial de Pagos</button>
                 <button onclick="cambiarTab('amortizacion')" id="btn-amortizacion" class="pb-3 text-sm font-bold text-gray-400 hover:text-gray-600 transition">Amortización (Cuotas)</button>
             </div>
 
-            <!-- Tab Historial de Pagos -->
             <div id="tab-pagos" class="space-y-4">
                 {% if prestamo.pagos %}
                 <div class="overflow-x-auto">
@@ -221,7 +222,6 @@
                 {% endif %}
             </div>
 
-            <!-- Tab Amortización (Cuotas Generadas) -->
             <div id="tab-amortizacion" class="hidden space-y-4">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-sm">
@@ -252,13 +252,11 @@
                     </table>
                 </div>
             </div>
-
         </div>
-
     </div>
 </main>
 
-<!-- Modal Registrar Pago / Abono -->
+<!-- Modal Registrar Pago / Abono Automatizado -->
 <div id="modalAbono" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
         <div class="flex justify-between items-center border-b pb-3">
@@ -266,123 +264,156 @@
             <button onclick="toggleModalAbono()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
         </div>
         
+        <!-- Botones de Selección Rápida -->
+        <div class="grid grid-cols-2 gap-3">
+            <button type="button" onclick="seleccionarOpcionPago('cuota')" id="btn-opcion-cuota" class="p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold text-xs flex flex-col items-center justify-center gap-1 transition shadow-xs">
+                <i class="fa-solid fa-calendar-check text-base"></i>
+                Pagar Cuota Actual
+            </button>
+            <button type="button" onclick="seleccionarOpcionPago('todo')" id="btn-opcion-todo" class="p-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-600 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-gray-300">
+                <i class="fa-solid fa-bolt text-base"></i>
+                Pagar Todo el Capital
+            </button>
+        </div>
+
         <form id="form-registrar-pago" action="{{ url_for('registrar_abono', id=prestamo.id) }}" method="POST" class="space-y-4" onsubmit="interceptarPago(event)">
             <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Concepto</label>
-                <input type="text" id="input-concepto" name="concepto" value="ABONO CAPITAL (REDUCIR CUOTA)" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-indigo-600">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Concepto Automático</label>
+                <input type="text" id="input-concepto" name="concepto" value="PAGO CUOTA" readonly required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm font-semibold text-indigo-700 focus:outline-none">
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Total a Pagar ($)</label>
-                    <input type="number" step="any" name="total_pago" id="total_pago" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-indigo-600" placeholder="0.00">
+                    <input type="number" step="any" name="total_pago" id="total_pago" readonly required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm font-bold text-emerald-600 focus:outline-none" placeholder="0.00">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha de Pago</label>
-                    <input type="date" name="fecha" id="input-fecha" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-indigo-600">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha de Pago (Editable)</label>
+                    <input type="date" name="fecha" id="input-fecha" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-indigo-600 bg-white cursor-pointer">
                 </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Abono Capital</label>
-                    <input type="number" step="any" id="input-capital" name="capital" value="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-indigo-600">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Interés</label>
-                    <input type="number" step="any" id="input-interes" name="interes" value="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-indigo-600">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Mora</label>
-                    <input type="number" step="any" id="input-mora" name="mora" value="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-indigo-600">
-                </div>
-            </div>
+            <!-- Campos Ocultos para desglose interno -->
+            <input type="hidden" id="input-capital" name="capital" value="0">
+            <input type="hidden" id="input-interes" name="interes" value="0">
+            <input type="hidden" id="input-mora" name="mora" value="0">
 
             <div class="flex justify-end gap-3 pt-4 border-t">
                 <button type="button" onclick="toggleModalAbono()" class="px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-100 transition">Cancelar</button>
-                <button type="submit" class="px-5 py-2 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition">Guardar Pago</button>
+                <button type="submit" class="px-5 py-2.5 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition">Listo, Guardar Pago</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- MODAL DE RECIBO LEGAL / COMPROBANTE DE PAGO -->
+<!-- Modal Ajustar Capital (préstamo adicional al mismo cliente) -->
+<div id="modalAjustarCapital" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="text-lg font-bold text-gray-800">Ajustar Capital del Préstamo</h3>
+            <button onclick="toggleModalAjustarCapital()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <p class="text-xs text-gray-500 leading-relaxed">
+            Si el cliente pidió más dinero prestado, ingresa aquí el monto adicional.
+            Se sumará al capital de este mismo préstamo y la amortización, el saldo
+            pendiente y el Dashboard se recalculan automáticamente. No se crea un
+            préstamo nuevo.
+        </p>
+
+        <form id="form-ajustar-capital" action="{{ url_for('ajustar_capital', id=prestamo.id) }}" method="POST" class="space-y-4" onsubmit="return confirmarAjusteCapital(event)">
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Capital Actual</label>
+                <input type="text" readonly value="${{ '{:,.2f}'.format(prestamo.capital_actual) }}" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm font-semibold text-gray-600 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Monto Adicional a Prestar ($)</label>
+                <input type="number" step="any" min="0.01" name="monto_adicional" id="input-monto-adicional" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-emerald-600 focus:outline-none focus:border-emerald-500" placeholder="0.00">
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t">
+                <button type="button" onclick="toggleModalAjustarCapital()" class="px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-100 transition">Cancelar</button>
+                <button type="submit" class="px-5 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition">Ajustar Capital</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL DE RECIBO LEGAL DETALLADO -->
 <div id="modal-recibo-legal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center hidden">
     <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-200 overflow-hidden text-xs">
-        <!-- Cabecera del Modal -->
         <div class="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-slate-50">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-file-invoice-dollar text-indigo-600 text-base"></i>
-                <span class="font-black text-slate-800 uppercase tracking-wider">Comprobante Oficial</span>
+                <span class="font-black text-slate-800 uppercase tracking-wider">Recibo de Pago</span>
             </div>
             <button onclick="cerrarReciboLegalYEnviar()" class="text-slate-400 hover:text-slate-600 text-sm font-bold"><i class="fa-solid fa-xmark text-lg"></i></button>
         </div>
 
-        <!-- Cuerpo Imprimible del Recibo -->
         <div class="p-6">
             <div id="zona-impresion-recibo" class="border-2 border-slate-200 rounded-xl p-5 space-y-4 bg-white shadow-xs">
-                <!-- Datos de la Empresa -->
-                <div class="text-center pb-2 border-b border-dashed border-slate-200">
-                    <h4 class="text-sm font-black text-indigo-600 uppercase tracking-tight">Fenix Credit - Sistema Ilimitado</h4>
-                    <p class="text-[10px] text-slate-400 font-medium">Comprobante de Transacción Financiera</p>
+                
+                <div class="flex justify-between items-start border-b border-slate-200 pb-3">
+                    <div>
+                        <h4 class="text-sm font-black text-indigo-600 uppercase tracking-tight">RECIBO DE PAGO</h4>
+                        <span class="text-[10px] text-slate-400 font-bold block mt-0.5">Fenix Credit</span>
+                    </div>
+                    <div class="text-right text-[11px] text-slate-600">
+                        <div><span class="text-slate-400 font-semibold">Fecha:</span> <strong id="recibo-f" class="text-slate-900">---</strong></div>
+                        <div><span class="text-slate-400 font-semibold">Hora:</span> <strong id="recibo-h" class="text-slate-900">---</strong></div>
+                        <div><span class="text-slate-400 font-semibold">Recibo #:</span> <strong id="recibo-n" class="text-slate-900 font-mono">---</strong></div>
+                    </div>
                 </div>
                 
-                <!-- Info de Recibo y Fecha -->
-                <div class="grid grid-cols-2 gap-2 text-slate-600 text-[11px]">
+                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
                     <div>
-                        <span class="uppercase font-bold text-slate-400 text-[9px] block">Recibo N°</span>
-                        <strong id="recibo-n" class="text-slate-900 font-mono text-xs">---</strong>
+                        <span class="uppercase font-bold text-slate-400 text-[9px] block">Cliente</span>
+                        <strong id="recibo-c" class="text-slate-900 text-sm uppercase block">---</strong>
                     </div>
                     <div class="text-right">
-                        <span class="uppercase font-bold text-slate-400 text-[9px] block">Fecha y Hora</span>
-                        <strong id="recibo-f" class="text-slate-900 text-xs">---</strong>
+                        <span class="uppercase font-bold text-slate-400 text-[9px] block">Total Pagado</span>
+                        <span id="recibo-tot" class="text-base font-black text-blue-600 font-mono">$0.00</span>
                     </div>
                 </div>
 
-                <!-- Datos del Cliente -->
-                <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 space-y-0.5">
-                    <span class="uppercase font-bold text-slate-400 text-[9px] block">Cliente:</span>
-                    <strong id="recibo-c" class="text-slate-900 text-xs uppercase block">---</strong>
-                </div>
-
-                <!-- Concepto -->
-                <div class="space-y-0.5">
-                    <span class="uppercase font-bold text-slate-400 text-[9px] block">Concepto de Pago:</span>
-                    <span id="recibo-cp" class="text-slate-800 font-bold block text-xs">---</span>
-                </div>
-
-                <!-- Desglose Financiero -->
-                <div class="border-t border-b border-gray-100 py-3 space-y-1.5 font-medium text-slate-600">
-                    <div class="flex justify-between">
-                        <span>Abono a Capital:</span>
-                        <span id="recibo-cap" class="text-slate-900 font-mono">$0.00</span>
+                <div class="border border-slate-200 rounded-lg overflow-hidden text-[11px]">
+                    <div class="bg-slate-700 text-white font-bold px-3 py-1.5 uppercase text-[10px]">
+                        Detalles de la Transacción
                     </div>
-                    <div class="flex justify-between">
-                        <span>Interés:</span>
-                        <span id="recibo-int" class="text-slate-900 font-mono">$0.00</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span>Mora:</span>
-                        <span id="recibo-mor" class="text-slate-900 font-mono">$0.00</span>
+                    <div class="divide-y divide-slate-100 p-3 space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Concepto:</span>
+                            <span id="recibo-cp" class="font-bold text-slate-800 text-right">---</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Próximo Vencimiento:</span>
+                            <span id="recibo-vencimiento" class="font-medium text-slate-800">---</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Saldo Actual Restante:</span>
+                            <span id="recibo-saldo" class="font-bold text-indigo-600 font-mono">$0.00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Cuotas Pagadas:</span>
+                            <span id="recibo-pagadas" class="font-medium text-slate-800">0 / 0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Cuotas Pendientes:</span>
+                            <span id="recibo-pendientes" class="font-medium text-slate-800">0</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Total Pagado -->
-                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex justify-between items-center text-emerald-900 font-black">
-                    <span class="text-xs uppercase">Total Pagado:</span>
-                    <span id="recibo-tot" class="text-base font-mono text-emerald-700">$0.00</span>
-                </div>
-
-                <!-- Firma / Pie legal -->
-                <div class="text-center pt-2 text-[9px] text-slate-400 font-medium">
-                    <p>Este comprobante es un soporte digital válido de su transacción.</p>
-                    <p class="text-indigo-500 font-bold mt-0.5">fenixcredit.com</p>
+                <div class="text-center pt-2 text-[9px] text-slate-400 space-y-1">
+                    <p>Exija su recibo como comprobante de pago para cualquier duda o aclaración. La empresa no se hace responsable de alguna reclamación si no presenta su recibo de pago.</p>
+                    <p class="text-red-700 font-bold">Conserve este recibo de pago.</p>
+                    <p class="text-[8px] text-slate-300">Recibo generado automáticamente el <span id="recibo-gen-pie">---</span></p>
                 </div>
             </div>
 
-            <!-- Botones de Acción (Imprimir / Descargar / Cerrar) -->
             <div class="grid grid-cols-2 gap-3 pt-5">
-                <button onclick="imprimirReciboLegal()" class="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition flex items-center justify-center gap-2 text-xs shadow-2xs">
+                <button onclick="imprimirReciboLegal()" class="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition flex items-center justify-center gap-2 text-xs">
                     <i class="fa-solid fa-print"></i> Imprimir / Guardar PDF
                 </button>
                 <button onclick="cerrarReciboLegalYEnviar()" class="py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition shadow-md shadow-indigo-600/20 text-xs">
@@ -393,10 +424,83 @@
     </div>
 </div>
 
+<!-- Scripts del sistema -->
 <script>
+    // Variables dinámicas inyectadas desde Flask
+    const pagosRealizados = Number('{{ prestamo.pagos|length if prestamo.pagos else 0 }}');
+    const proximaCuotaNum = pagosRealizados + 1;
+    const totalCuotasSistema = parseInt('{{ prestamo.cuotas_totales or 0 }}');
+    
+    // Obtener exactamente la fecha de vencimiento de la cuota actual pendiente desde el ciclo de cuotas
+    const fechaCuotaPendienteExacta = "{% if prestamo.cuotas and prestamo.cuotas|length > prestamo.pagos|length %}{{ prestamo.cuotas[prestamo.pagos|length].fecha_vencimiento }}{% else %}{{ prestamo.proximo_pago }}{% endif %}";
+    
+    // Valores numéricos exactos de las cuotas y totales pendientes
+    const valorCuotaPendiente = Number('{{ prestamo.cuotas[prestamo.pagos|length].valor_cuota if prestamo.cuotas and prestamo.cuotas|length > prestamo.pagos|length else (prestamo.cuotas[0].valor_cuota if prestamo.cuotas and prestamo.cuotas|length > 0 else prestamo.capital_actual) }}');
+    const capitalCuotaPendiente = Number('{{ prestamo.cuotas[prestamo.pagos|length].capital_esperado if prestamo.cuotas and prestamo.cuotas|length > prestamo.pagos|length else prestamo.capital_actual }}');
+    const interesCuotaPendiente = Number('{{ prestamo.cuotas[prestamo.pagos|length].interes_esperado if prestamo.cuotas and prestamo.cuotas|length > prestamo.pagos|length else 0 }}');
+    
+    // Saldo Total Pendiente (Capital Inicial + Total Intereses - Total Abonado)
+    const saldoTotalPendiente = Number('{{ (prestamo.capital_inicial + total_intereses) - total_abonado }}');
+
+    function toggleModalAjustarCapital() {
+        const modal = document.getElementById('modalAjustarCapital');
+        modal.classList.toggle('hidden');
+        if (!modal.classList.contains('hidden')) {
+            document.getElementById('input-monto-adicional').value = '';
+            document.getElementById('input-monto-adicional').focus();
+        }
+    }
+
+    function confirmarAjusteCapital(event) {
+        const monto = parseFloat(document.getElementById('input-monto-adicional').value);
+        if (!monto || monto <= 0) {
+            alert('Ingresa un monto adicional válido, mayor a cero.');
+            event.preventDefault();
+            return false;
+        }
+        const montoFmt = monto.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return confirm(`Vas a sumar $${montoFmt} al capital de este préstamo y la amortización se recalculará automáticamente. ¿Confirmas?`);
+    }
+
     function toggleModalAbono() {
         const modal = document.getElementById('modalAbono');
         modal.classList.toggle('hidden');
+        if (!modal.classList.contains('hidden')) {
+            seleccionarOpcionPago('cuota'); // Por defecto se selecciona pagar cuota al abrir
+        }
+    }
+
+    function seleccionarOpcionPago(tipo) {
+        const btnCuota = document.getElementById('btn-opcion-cuota');
+        const btnTodo = document.getElementById('btn-opcion-todo');
+        const inputConcepto = document.getElementById('input-concepto');
+        const inputTotal = document.getElementById('total_pago');
+        const inputCapital = document.getElementById('input-capital');
+        const inputInteres = document.getElementById('input-interes');
+        const inputFecha = document.getElementById('input-fecha');
+
+        // Asignar automáticamente la fecha exacta de la cuota o la del sistema con formato correcto YYYY-MM-DD
+        if (inputFecha) {
+            inputFecha.value = fechaCuotaPendienteExacta;
+        }
+
+        if (tipo === 'cuota') {
+            btnCuota.className = "p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold text-xs flex flex-col items-center justify-center gap-1 transition shadow-xs";
+            btnTodo.className = "p-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-600 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-gray-300";
+            
+            inputConcepto.value = `PAGO CUOTA #${proximaCuotaNum}`;
+            inputTotal.value = valorCuotaPendiente.toFixed(2);
+            inputCapital.value = capitalCuotaPendiente.toFixed(2);
+            inputInteres.value = interesCuotaPendiente.toFixed(2);
+        } else {
+            btnTodo.className = "p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold text-xs flex flex-col items-center justify-center gap-1 transition shadow-xs";
+            btnCuota.className = "p-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-600 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-gray-300";
+            
+            inputConcepto.value = "CANCELACIÓN TOTAL DE LA DEUDA";
+            inputTotal.value = saldoTotalPendiente.toFixed(2);
+            inputCapital.value = saldoTotalPendiente.toFixed(2);
+            inputInteres.value = "0.00";
+        }
     }
 
     function cambiarTab(tab) {
@@ -418,40 +522,74 @@
         }
     }
 
-    // Intercepta el envío del formulario para mostrar primero el Recibo Oficial
     function interceptarPago(event) {
-        event.preventDefault(); // Detiene el envío inmediato para mostrar el modal de recibo
+        event.preventDefault(); 
 
-        // Capturar datos ingresados en el formulario
         const concepto = document.getElementById('input-concepto').value;
-        const fecha = document.getElementById('input-fecha').value || new Date().toISOString().split('T')[0];
-        const capital = document.getElementById('input-capital').value || 0;
-        const interes = document.getElementById('input-interes').value || 0;
-        const mora = document.getElementById('input-mora').value || 0;
-        const total = document.getElementById('total_pago').value || 0;
-        const clienteNombre = "{{ prestamo.cliente.nombre }}";
+        const fechaInput = document.getElementById('input-fecha').value;
+        const fechaActualObj = new Date();
+        
+        const opcionesFecha = { day: 'numeric', month: 'short', year: 'numeric' };
+        const fechaFormateada = fechaInput ? new Date(fechaInput + 'T00:00:00').toLocaleDateString('es-ES', opcionesFecha) : fechaActualObj.toLocaleDateString('es-ES', opcionesFecha);
+        const horaFormateada = fechaActualObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
-        // Rellenar datos en el modal de recibo
-        document.getElementById('recibo-n').innerText = Math.floor(100000 + Math.random() * 900000);
-        document.getElementById('recibo-f').innerText = fecha;
+        const clienteNombre = "{{ prestamo.cliente.nombre }}";
+        let total = parseFloat(document.getElementById('total_pago').value) || 0;
+        let capital = parseFloat(document.getElementById('input-capital').value) || 0;
+        let interes = parseFloat(document.getElementById('input-interes').value) || 0;
+        let mora = parseFloat(document.getElementById('input-mora').value) || 0;
+
+        let sumaDesglose = capital + interes + mora;
+        if (sumaDesglose === 0 && total > 0) {
+            capital = total;
+            document.getElementById('input-capital').value = capital;
+        } else if (total === 0 && sumaDesglose > 0) {
+            total = sumaDesglose;
+            document.getElementById('total_pago').value = total;
+        }
+
+        const capitalInicialSistema = Number('{{ prestamo.capital_inicial or 0 }}');
+        const totalInteresesSistema = Number('{{ total_intereses or 0 }}');
+        const totalAbonadoSistema = Number('{{ total_abonado or 0 }}');
+        
+        let saldoTotalPendienteActual = (capitalInicialSistema + totalInteresesSistema) - totalAbonadoSistema;
+        let nuevoSaldoPendiente = saldoTotalPendienteActual - total;
+        if (nuevoSaldoPendiente < 0) nuevoSaldoPendiente = 0;
+
+        // Comprobar si es cancelación total
+        const esCancelacionTotal = concepto.includes("CANCELACIÓN") || nuevoSaldoPendiente <= 1;
+
+        let nuevasCuotasPagadas, nuevasCuotasPendientes;
+        if (esCancelacionTotal) {
+            nuevasCuotasPagadas = totalCuotasSistema;
+            nuevasCuotasPendientes = 0;
+            nuevoSaldoPendiente = 0;
+        } else {
+            nuevasCuotasPagadas = pagosRealizados + 1;
+            if (nuevasCuotasPagadas > totalCuotasSistema) nuevasCuotasPagadas = totalCuotasSistema;
+            nuevasCuotasPendientes = totalCuotasSistema - nuevasCuotasPagadas;
+        }
+
+        document.getElementById('recibo-n').innerText = Math.floor(1000 + Math.random() * 9000);
+        document.getElementById('recibo-f').innerText = fechaFormateada;
+        document.getElementById('recibo-h').innerText = horaFormateada;
+        document.getElementById('recibo-gen-pie').innerText = `${fechaFormateada} ${horaFormateada}`;
         document.getElementById('recibo-c').innerText = clienteNombre;
         document.getElementById('recibo-cp').innerText = concepto;
+        document.getElementById('recibo-vencimiento').innerText = fechaInput || fechaCuotaPendienteExacta;
 
         const moneda = (val) => '$' + Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
-
-        document.getElementById('recibo-cap').innerText = moneda(capital);
-        document.getElementById('recibo-int').innerText = moneda(interes);
-        document.getElementById('recibo-mor').innerText = moneda(mora);
         document.getElementById('recibo-tot').innerText = moneda(total);
+        document.getElementById('recibo-saldo').innerText = moneda(nuevoSaldoPendiente);
+        document.getElementById('recibo-pagadas').innerText = `${nuevasCuotasPagadas} / ${totalCuotasSistema}`;
+        document.getElementById('recibo-pendientes').innerText = nuevasCuotasPendientes;
 
-        // Ocultar modal de abono y mostrar el recibo
         document.getElementById('modalAbono').classList.add('hidden');
         document.getElementById('modal-recibo-legal').classList.remove('hidden');
     }
 
     function cerrarReciboLegalYEnviar() {
         document.getElementById('modal-recibo-legal').classList.add('hidden');
-        // Envía el formulario formalmente a Flask para que guarde en la Base de Datos
         document.getElementById('form-registrar-pago').submit();
     }
 
@@ -473,6 +611,14 @@
             ventana.close();
         }, 400);
     }
+
+    // Inicializar fecha automáticamente al cargar la página
+    document.addEventListener("DOMContentLoaded", () => {
+        const fechaInput = document.getElementById('input-fecha');
+        if(fechaInput && fechaCuotaPendienteExacta) {
+            fechaInput.value = fechaCuotaPendienteExacta;
+        }
+    });
 </script>
 </body>
 </html>
