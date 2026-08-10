@@ -170,15 +170,15 @@
                     </div>
                     <div class="bg-slate-50 p-4 rounded-xl border border-gray-100">
                         <span class="text-[11px] text-slate-400 font-bold block">Cuotas pendientes</span>
-                        <span class="text-base font-black text-slate-700 mt-1 block">0</span>
+                        <span class="text-base font-black text-slate-700 mt-1 block">{{ cuotas_pendientes_hoy|default(0) }}</span>
                     </div>
                     <div class="bg-slate-50 p-4 rounded-xl border border-gray-100">
                         <span class="text-[11px] text-slate-400 font-bold block">En mora</span>
-                        <span class="text-base font-black text-red-500 mt-1 block">0</span>
+                        <span class="text-base font-black text-red-500 mt-1 block">{{ en_mora|default(0) }}</span>
                     </div>
                     <div class="bg-slate-50 p-4 rounded-xl border border-gray-100">
                         <span class="text-[11px] text-slate-400 font-bold block">Pagos realizados</span>
-                        <span class="text-base font-black text-indigo-600 mt-1 block">0</span>
+                        <span class="text-base font-black text-indigo-600 mt-1 block">{{ pagos_realizados_hoy|default(0) }}</span>
                     </div>
                 </div>
             </div>
@@ -226,14 +226,40 @@
                     </div>
                 </div>
 
-                <div id="cuerpo-cuentas" class="text-center py-6">
-                    <div id="icono-estado-cuenta" class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl shadow-2xs">
-                        <i class="fa-solid fa-check"></i>
-                    </div>
-                    <h4 id="titulo-estado-cuenta" class="font-bold text-slate-800 text-sm">¡Excelente!</h4>
-                    <p id="texto-estado-cuenta" class="text-xs text-slate-400 mt-1">No hay cobros pendientes para hoy. Todos los pagos están al día.</p>
+                <div id="cuerpo-cuentas" class="py-2 overflow-y-auto max-h-60 space-y-2">
+                    {% if cuentas_por_cobrar %}
+                        {% for cuota in cuentas_por_cobrar %}
+                        <a href="{{ url_for('detalle_prestamo', id=cuota.prestamo_id) }}" class="cuenta-item block bg-slate-50 hover:bg-slate-100 p-3 rounded-xl border border-gray-100 flex justify-between items-center text-left transition cursor-pointer">
+                            <div>
+                                <span class="text-xs font-bold text-blue-600">
+                                    {{ cuota.cliente_display }}
+                                </span>
+                                <p class="text-[10px] mt-0.5">
+                                    <span class="text-slate-400">Cuota #{{ cuota.cuota_num }} - Vence: {{ cuota.vencimiento }}</span>
+                                    {% if cuota.vencida %}
+                                        <span class="ml-1 px-1.5 py-0.5 rounded bg-red-100 text-red-600 font-bold">Vencida</span>
+                                    {% elif cuota.vence_hoy %}
+                                        <span class="ml-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-600 font-bold">Vence hoy</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs font-black text-slate-700">${{ "{:,.2f}".format(cuota.valor) }}</span>
+                                <span class="block text-[10px] font-bold text-emerald-600">Gestionar</span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-6">
+                            <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl shadow-2xs">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                            <h4 class="font-bold text-slate-800 text-sm">¡Excelente!</h4>
+                            <p class="text-xs text-slate-400 mt-1">No hay cobros pendientes para hoy. Todos los pagos están al día.</p>
+                        </div>
+                    {% endif %}
                 </div>
-                <div></div>
+                <p id="sin-resultados-filtro" class="hidden text-center text-xs text-slate-400 py-6">No se encontraron cuentas con ese filtro.</p>
             </div>
 
             <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs flex flex-col justify-between animate-fade" style="animation-delay: 0.35s;">
@@ -469,8 +495,74 @@
         document.getElementById('label-anio-desc').innerText = `Resumen de ingresos mensuales durante el año ${anio}.`;
     }
 
-    function filtrarClientes() {}
-    function aplicarFiltroFecha() {}
+    // Datos completos de cuentas pendientes (vencidas, de hoy y futuras), generados por el backend,
+    // para poder filtrar en el navegador sin recargar la página.
+    const TODAS_LAS_CUENTAS = {{ todas_pendientes|tojson }};
+    const URL_PRESTAMO_BASE = "{{ url_for('detalle_prestamo', id=999999) }}".replace('999999', '');
+
+    function escapeHtml(str) {
+        return String(str).replace(/[&<>"']/g, (c) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+    }
+
+    function renderCuentas(lista) {
+        const contenedor = document.getElementById('cuerpo-cuentas');
+        const sinResultados = document.getElementById('sin-resultados-filtro');
+
+        if (!lista || lista.length === 0) {
+            contenedor.innerHTML = '';
+            contenedor.classList.add('hidden');
+            sinResultados.classList.remove('hidden');
+            return;
+        }
+
+        contenedor.classList.remove('hidden');
+        sinResultados.classList.add('hidden');
+
+        contenedor.innerHTML = lista.map(cuota => {
+            const href = `${URL_PRESTAMO_BASE}${cuota.prestamo_id}`;
+            let badge = '';
+            if (cuota.vencida) {
+                badge = '<span class="ml-1 px-1.5 py-0.5 rounded bg-red-100 text-red-600 font-bold">Vencida</span>';
+            } else if (cuota.vence_hoy) {
+                badge = '<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-600 font-bold">Vence hoy</span>';
+            }
+            const valorFmt = Number(cuota.valor).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return `
+                <a href="${href}" class="cuenta-item block bg-slate-50 hover:bg-slate-100 p-3 rounded-xl border border-gray-100 flex justify-between items-center text-left transition cursor-pointer">
+                    <div>
+                        <span class="text-xs font-bold text-blue-600">${escapeHtml(cuota.cliente_display)}</span>
+                        <p class="text-[10px] mt-0.5">
+                            <span class="text-slate-400">Cuota #${cuota.cuota_num} - Vence: ${cuota.vencimiento}</span>
+                            ${badge}
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs font-black text-slate-700">$${valorFmt}</span>
+                        <span class="block text-[10px] font-bold text-emerald-600">Gestionar</span>
+                    </div>
+                </a>`;
+        }).join('');
+    }
+
+    function filtrarClientes() {
+        const texto = document.getElementById('input-buscar-cliente').value.trim().toLowerCase();
+        const fecha = document.getElementById('input-filtro-fecha').value;
+
+        let lista = TODAS_LAS_CUENTAS;
+        if (texto) {
+            lista = lista.filter(c => c.cliente.includes(texto));
+        }
+        if (fecha) {
+            lista = lista.filter(c => c.vencimiento === fecha);
+        }
+        renderCuentas(lista);
+    }
+
+    function aplicarFiltroFecha() {
+        filtrarClientes();
+    }
 
     function calcularPrestamoFinanciero() {
         const monto = parseFloat(document.getElementById('calc-monto').value) || 0;
