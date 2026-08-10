@@ -154,7 +154,7 @@
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
                         <i class="fa-solid fa-search text-xs"></i>
                     </span>
-                    <input type="text" id="buscadorClientes" onkeyup="filtrarClientes()" placeholder="Buscar por nombre o teléfono..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-600 transition">
+                    <input type="text" id="buscadorClientes" onkeyup="filtrarClientes()" placeholder="Buscar por nombre, cédula o teléfono..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-600 transition">
                 </div>
             </div>
 
@@ -165,7 +165,9 @@
                         <tr class="border-b border-gray-100 text-xs font-bold text-gray-400 uppercase">
                             <th class="pb-3 px-2">ID</th>
                             <th class="pb-3 px-2">Nombre</th>
+                            <th class="pb-3 px-2">Cédula</th>
                             <th class="pb-3 px-2">Teléfono</th>
+                            <th class="pb-3 px-2">Ocupación</th>
                             <th class="pb-3 px-2">Préstamos Asociados</th>
                             <th class="pb-3 px-2 text-right">Acciones</th>
                         </tr>
@@ -174,8 +176,13 @@
                         {% for c in clientes %}
                         <tr class="hover:bg-slate-50 transition">
                             <td class="py-3.5 px-2 font-bold text-gray-500">#{{ c.id }}</td>
-                            <td class="py-3.5 px-2 font-semibold text-gray-800">{{ c.nombre }}</td>
+                            <td class="py-3.5 px-2 font-semibold text-gray-800">
+                                {{ c.nombre }}
+                                {% if c.direccion %}<span class="block text-[10px] text-gray-400 font-normal">{{ c.direccion }}</span>{% endif %}
+                            </td>
+                            <td class="py-3.5 px-2 text-gray-600">{{ c.cedula or '—' }}</td>
                             <td class="py-3.5 px-2 text-gray-600">{{ c.telefono }}</td>
+                            <td class="py-3.5 px-2 text-gray-600">{{ c.ocupacion or '—' }}</td>
                             <td class="py-3.5 px-2 text-gray-600">
                                 <span class="bg-slate-100 text-slate-700 font-bold px-2.5 py-1 rounded-lg inline-block text-xs">
                                     {{ c.prestamos | length }} préstamo(s)
@@ -218,13 +225,34 @@
         </div>
         
         <form action="{{ url_for('agregar_cliente') }}" method="POST" autocomplete="off" class="space-y-4 text-xs">
+            <input type="hidden" name="origen" value="modal">
             <div>
                 <label class="font-bold text-slate-600 block mb-1">Nombre Completo *</label>
                 <input type="text" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="nombre" placeholder="Ej. Juan Pérez" autocomplete="off" required>
             </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="font-bold text-slate-600 block mb-1">Teléfono *</label>
+                    <input type="text" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="telefono" placeholder="Ej. 3001234567" autocomplete="off" required>
+                </div>
+                <div>
+                    <label class="font-bold text-slate-600 block mb-1">Cédula / Identificación</label>
+                    <input type="text" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="cedula" placeholder="Ej. 1023456789" autocomplete="off">
+                </div>
+            </div>
             <div>
-                <label class="font-bold text-slate-600 block mb-1">Teléfono *</label>
-                <input type="text" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="telefono" placeholder="Ej. 3001234567" autocomplete="off" required>
+                <label class="font-bold text-slate-600 block mb-1">Dirección (dónde vive)</label>
+                <input type="text" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="direccion" placeholder="Ej. Cra 5 # 10-20, Barrio Centro" autocomplete="off">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="font-bold text-slate-600 block mb-1">Ocupación (a qué se dedica)</label>
+                    <input type="text" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="ocupacion" placeholder="Ej. Comerciante, empleado..." autocomplete="off">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-600 block mb-1">Fecha de Nacimiento</label>
+                    <input type="date" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="fecha_nacimiento" autocomplete="off">
+                </div>
             </div>
 
             <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
@@ -355,6 +383,22 @@
         modal.classList.add('hidden');
     }
 
+    // Si el backend redirige aquí con ?abrir_modal=1 (por ejemplo, tras un error
+    // de cliente duplicado enviado desde este mismo modal), lo reabrimos
+    // automáticamente sin borrar el mensaje de error mostrado arriba.
+    document.addEventListener('DOMContentLoaded', function () {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('abrir_modal') === '1') {
+            const modal = document.getElementById('modal-cliente');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            // Limpiamos el parámetro de la URL para que no se reabra si el usuario recarga
+            params.delete('abrir_modal');
+            const nuevaUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+            window.history.replaceState({}, '', nuevaUrl);
+        }
+    });
+
     function toggleModalCalculadora() {
         const modal = document.getElementById('modalCalculadora');
         if (modal.classList.contains('hidden')) {
@@ -375,14 +419,18 @@
 
         for (let i = 1; i < filas.length; i++) {
             const fila = filas[i];
-            const tdNombre = fila.getElementsByTagName('td')[1];
-            const tdTelefono = fila.getElementsByTagName('td')[2];
-            
+            const celdas = fila.getElementsByTagName('td');
+            // Columnas: 0=ID, 1=Nombre, 2=Cédula, 3=Teléfono, 4=Ocupación
+            const tdNombre = celdas[1];
+            const tdCedula = celdas[2];
+            const tdTelefono = celdas[3];
+
             if (tdNombre || tdTelefono) {
-                const textoNombre = tdNombre.textContent || tdNombre.innerText;
-                const textoTelefono = tdTelefono.textContent || tdTelefono.innerText;
-                
-                if (textoNombre.toLowerCase().indexOf(filtro) > -1 || textoTelefono.toLowerCase().indexOf(filtro) > -1) {
+                const textoNombre = tdNombre ? (tdNombre.textContent || tdNombre.innerText) : '';
+                const textoCedula = tdCedula ? (tdCedula.textContent || tdCedula.innerText) : '';
+                const textoTelefono = tdTelefono ? (tdTelefono.textContent || tdTelefono.innerText) : '';
+
+                if (textoNombre.toLowerCase().indexOf(filtro) > -1 || textoTelefono.toLowerCase().indexOf(filtro) > -1 || textoCedula.toLowerCase().indexOf(filtro) > -1) {
                     fila.style.display = "";
                 } else {
                     fila.style.display = "none";
