@@ -9,7 +9,7 @@
 </head>
 <body class="bg-gray-50 font-sans flex h-screen overflow-hidden">
 
-<aside class="w-80 bg-slate-900 text-white flex flex-col justify-between hidden md:flex shadow-2xl z-20 shrink-0">
+<aside id="sidebar" class="w-80 bg-slate-900 text-white flex flex-col justify-between fixed inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 md:static transition-transform duration-300 ease-in-out shadow-2xl shrink-0">
     <div>
         <!-- Cabecera del Sidebar -->
         <div class="flex items-center gap-3.5 px-6 py-6 border-b border-slate-800">
@@ -70,17 +70,20 @@
 
 <!-- Contenido Principal -->
 <main class="flex-1 flex flex-col h-screen overflow-y-auto">
-    <header class="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center shadow-sm">
-        <div class="flex items-center gap-4">
+    <header class="bg-white border-b border-gray-200 px-4 sm:px-8 py-4 flex justify-between items-center shadow-sm">
+        <div class="flex items-center gap-2 sm:gap-4">
+            <button id="menu-btn" class="md:hidden text-slate-600 hover:text-slate-900 focus:outline-none p-1 mr-1">
+                <i class="fa-solid fa-bars text-lg"></i>
+            </button>
             <a href="{{ url_for('prestamos') }}" class="text-gray-400 hover:text-gray-600 text-lg"><i class="fa-solid fa-arrow-left"></i></a>
-            <h2 class="text-xl font-bold text-gray-800">Préstamo #{{ prestamo.id }}</h2>
+            <h2 class="text-base sm:text-xl font-bold text-gray-800">Préstamo #{{ prestamo.id }}</h2>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="hidden sm:flex items-center gap-3">
             <span class="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-full border border-indigo-100">Versión Ilimitada Gratuita</span>
         </div>
     </header>
 
-    <div class="p-8 max-w-7xl mx-auto w-full space-y-6">
+    <div class="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6">
 
         <!-- Alertas Flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -94,13 +97,13 @@
         {% endwith %}
 
         <!-- Cabecera Cliente e Info Principal -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6 space-y-6">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-4">
                 <div>
                     <h3 class="text-xl font-extrabold text-gray-800">{{ prestamo.cliente.nombre }}</h3>
                     <p class="text-sm text-gray-500 mt-0.5"><i class="fa-solid fa-phone mr-1"></i> +57 {{ prestamo.cliente.telefono }}</p>
                 </div>
-                <div class="flex items-center gap-3">
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
                     <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">{{ prestamo.estado }}</span>
                     
                     <a href="{{ url_for('eliminar_prestamo', id=prestamo.id) }}" 
@@ -114,7 +117,7 @@
                         <i class="fa-solid fa-sack-dollar"></i> Ajustar Capital
                     </button>
 
-                    <button onclick="toggleModalAbono()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-md transition flex items-center gap-2">
+                    <button onclick="toggleModalAbono()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-md transition flex items-center justify-center gap-2">
                         <i class="fa-solid fa-plus"></i> Registrar Pago / Abono
                     </button>
                 </div>
@@ -183,15 +186,36 @@
         </div>
 
         <!-- Pestañas e Historiales -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <div class="flex border-b border-gray-100 gap-8 mb-6">
-                <button onclick="cambiarTab('pagos')" id="btn-pagos" class="pb-3 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition">Historial de Pagos</button>
-                <button onclick="cambiarTab('amortizacion')" id="btn-amortizacion" class="pb-3 text-sm font-bold text-gray-400 hover:text-gray-600 transition">Amortización (Cuotas)</button>
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+            <div class="flex border-b border-gray-100 gap-4 sm:gap-8 mb-6 overflow-x-auto">
+                <button onclick="cambiarTab('pagos')" id="btn-pagos" class="pb-3 text-xs sm:text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition whitespace-nowrap">Historial de Pagos</button>
+                <button onclick="cambiarTab('amortizacion')" id="btn-amortizacion" class="pb-3 text-xs sm:text-sm font-bold text-gray-400 hover:text-gray-600 transition whitespace-nowrap">Amortización (Cuotas)</button>
             </div>
 
             <div id="tab-pagos" class="space-y-4">
                 {% if prestamo.pagos %}
-                <div class="overflow-x-auto">
+                <!-- Vista de tarjetas para móvil -->
+                <div class="md:hidden space-y-3">
+                    {% for pago in prestamo.pagos %}
+                    <div class="border border-gray-100 rounded-xl p-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-semibold text-gray-800 text-sm">{{ pago.concepto }}</p>
+                                <p class="text-xs text-gray-400">{{ pago.fecha }}</p>
+                            </div>
+                            <span class="font-bold text-green-600 text-sm">${{ "{:,.2f}".format(pago.total_pago) }}</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-xs mt-3 pt-3 border-t border-gray-50">
+                            <div><span class="block text-gray-400 text-[10px] uppercase font-bold">Capital</span><span class="text-gray-700">${{ "{:,.2f}".format(pago.capital) }}</span></div>
+                            <div><span class="block text-gray-400 text-[10px] uppercase font-bold">Interés</span><span class="text-gray-700">${{ "{:,.2f}".format(pago.interes) }}</span></div>
+                            <div><span class="block text-gray-400 text-[10px] uppercase font-bold">Mora</span><span class="text-gray-700">${{ "{:,.2f}".format(pago.mora) }}</span></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Vista de tabla para escritorio -->
+                <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-left border-collapse text-sm">
                         <thead>
                             <tr class="border-b border-gray-100 text-xs font-bold text-gray-400 uppercase">
@@ -223,7 +247,28 @@
             </div>
 
             <div id="tab-amortizacion" class="hidden space-y-4">
-                <div class="overflow-x-auto">
+                <!-- Vista de tarjetas para móvil -->
+                <div class="md:hidden space-y-3">
+                    {% for cuota in prestamo.cuotas %}
+                    <div class="border border-gray-100 rounded-xl p-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-semibold text-gray-800 text-sm">Cuota {{ cuota.numero_cuota }}</p>
+                                <p class="text-xs text-gray-400">Vence: {{ cuota.fecha_vencimiento }}</p>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 shrink-0">{{ cuota.estado }}</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-xs mt-3 pt-3 border-t border-gray-50">
+                            <div><span class="block text-gray-400 text-[10px] uppercase font-bold">Cuota</span><span class="font-bold text-gray-800">${{ "{:,.2f}".format(cuota.valor_cuota) }}</span></div>
+                            <div><span class="block text-gray-400 text-[10px] uppercase font-bold">Capital</span><span class="text-gray-700">${{ "{:,.2f}".format(cuota.capital_esperado) }}</span></div>
+                            <div><span class="block text-gray-400 text-[10px] uppercase font-bold">Interés</span><span class="text-gray-700">${{ "{:,.2f}".format(cuota.interes_esperado) }}</span></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Vista de tabla para escritorio -->
+                <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-left border-collapse text-sm">
                         <thead>
                             <tr class="border-b border-gray-100 text-xs font-bold text-gray-400 uppercase">
@@ -426,6 +471,20 @@
 
 <!-- Scripts del sistema -->
 <script>
+    // Control del sidebar hamburguesa
+    const menuBtn = document.getElementById('menu-btn');
+    const sidebar = document.getElementById('sidebar');
+    if (menuBtn && sidebar) {
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+        });
+        window.addEventListener('click', (e) => {
+            if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && window.innerWidth < 768) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
+    }
+
     // Variables dinámicas inyectadas desde Flask
     const pagosRealizados = Number('{{ prestamo.pagos|length if prestamo.pagos else 0 }}');
     const proximaCuotaNum = pagosRealizados + 1;
