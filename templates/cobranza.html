@@ -59,12 +59,12 @@
 
 <!-- Contenido Principal -->
 <main class="flex-1 flex flex-col h-screen overflow-y-auto">
-    <header class="bg-white border-b border-gray-200 px-4 sm:px-8 py-4 flex justify-between items-center shadow-sm">
+    <header class="bg-white border-b border-gray-200 px-4 sm:px-8 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 shadow-sm">
         <div class="flex items-center gap-2">
             <button id="menu-btn" class="md:hidden text-slate-600 hover:text-slate-900 focus:outline-none p-1 mr-1">
                 <i class="fa-solid fa-bars text-lg"></i>
             </button>
-            <h2 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-comments-dollar mr-2 text-indigo-600"></i> Gestión de Cobranza</h2>
+            <h2 class="text-base sm:text-xl font-bold text-gray-800"><i class="fa-solid fa-comments-dollar mr-2 text-indigo-600"></i> Gestión de Cobranza</h2>
         </div>
         <div class="flex items-center gap-3">
             <span class="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-2 rounded-xl border border-indigo-100">Automatización Activa</span>
@@ -74,7 +74,7 @@
         </div>
     </header>
 
-    <div class="p-8 max-w-7xl mx-auto w-full space-y-6">
+    <div class="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6">
 
         <!-- Alertas flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -116,25 +116,52 @@
         </div>
 
         <!-- Filtros y Bandeja de Promesas/Cobros -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-            <form method="GET" action="{{ url_for('cobranza') }}" class="flex flex-col md:flex-row justify-between items-center gap-4 pb-4 border-b border-gray-100">
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6 space-y-4">
+            <form method="GET" action="{{ url_for('cobranza') }}" class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-gray-100">
                 <h3 class="text-base font-extrabold text-gray-800">Seguimiento Automático de Cobros</h3>
                 
-                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                    <select name="filtro_estado" class="bg-gray-50 border border-gray-200 text-gray-700 text-xs font-semibold rounded-xl px-3 py-2.5 outline-none focus:border-indigo-500">
+                <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full md:w-auto">
+                    <select name="filtro_estado" class="w-full sm:w-auto bg-gray-50 border border-gray-200 text-gray-700 text-xs font-semibold rounded-xl px-3 py-2.5 outline-none focus:border-indigo-500">
                         <option value="">Todas las gestiones</option>
                         <option value="hoy" {{ 'selected' if request.args.get('filtro_estado') == 'hoy' }}>Vencen Hoy</option>
                         <option value="mora" {{ 'selected' if request.args.get('filtro_estado') == 'mora' }}>En Mora (Atrasados)</option>
                         <option value="promesas" {{ 'selected' if request.args.get('filtro_estado') == 'promesas' }}>Promesas Abiertas</option>
                     </select>
-                    <input type="date" name="fecha_filtro" value="{{ request.args.get('fecha_filtro', '') }}" class="bg-gray-50 border border-gray-200 text-gray-700 text-xs font-semibold rounded-xl px-3 py-2.5 outline-none">
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition flex items-center gap-2">
+                    <input type="date" name="fecha_filtro" value="{{ request.args.get('fecha_filtro', '') }}" class="w-full sm:w-auto bg-gray-50 border border-gray-200 text-gray-700 text-xs font-semibold rounded-xl px-3 py-2.5 outline-none">
+                    <button type="submit" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition flex items-center justify-center gap-2">
                         <i class="fa-solid fa-filter"></i> Filtrar
                     </button>
                 </div>
             </form>
 
-            <div class="overflow-x-auto">
+            {% if cobranzas %}
+            <!-- Vista de tarjetas para móvil -->
+            <div class="md:hidden space-y-3">
+                {% for c in cobranzas %}
+                <a href="{{ url_for('detalle_prestamo', id=c.prestamo_id) }}" class="block border border-gray-100 rounded-xl p-4 hover:bg-gray-50 transition">
+                    <div class="flex justify-between items-start gap-2">
+                        <div>
+                            <p class="font-bold text-gray-800 text-sm">{{ c.cliente_nombre }}</p>
+                            <p class="text-xs text-gray-500">{{ c.telefono }}</p>
+                            <p class="text-[11px] text-indigo-600 font-semibold mt-0.5">Préstamo #{{ c.prestamo_id }}</p>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0
+                            {{ 'bg-amber-50 text-amber-700 border border-amber-100' if c.estado == 'Vence Hoy' else '' }}
+                            {{ 'bg-red-50 text-red-700 border border-red-100' if c.estado == 'En Mora' else '' }}
+                            {{ 'bg-blue-50 text-blue-700 border border-blue-100' if c.estado == 'Al Día' else '' }}">
+                            {{ c.estado }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center mt-3 pt-3 border-t border-gray-50 text-xs">
+                        <span class="text-gray-500">Vence: {{ c.vencimiento }} · <span class="text-red-600 font-bold">{{ c.dias_atraso }} días atraso</span></span>
+                        <span class="font-extrabold text-indigo-600">${{ "{:,.2f}".format(c.monto_pendiente) }}</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+
+            <!-- Vista de tabla para escritorio -->
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left border-collapse text-sm">
                     <thead>
                         <tr class="border-b border-gray-100 text-xs font-bold text-gray-400 uppercase">
@@ -148,38 +175,35 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
-                        {% if cobranzas %}
-                            {% for c in cobranzas %}
-                            <tr class="hover:bg-gray-50/50 transition">
-                                <td class="py-4 font-bold text-gray-800">{{ c.cliente_nombre }}</td>
-                                <td class="py-4 text-xs text-gray-600">{{ c.telefono }}</td>
-                                <td class="py-4 text-xs font-semibold text-gray-700">
-                                    <a href="{{ url_for('detalle_prestamo', id=c.prestamo_id) }}" class="text-indigo-600 hover:underline">#{{ c.prestamo_id }}</a>
-                                </td>
-                                <td class="py-4 text-xs text-gray-600">{{ c.vencimiento }}</td>
-                                <td class="py-4 text-xs font-bold text-red-600">{{ c.dias_atraso }} días</td>
-                                <td class="py-4">
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold 
-                                        {{ 'bg-amber-50 text-amber-700 border border-amber-100' if c.estado == 'Vence Hoy' else '' }}
-                                        {{ 'bg-red-50 text-red-700 border border-red-100' if c.estado == 'En Mora' else '' }}
-                                        {{ 'bg-blue-50 text-blue-700 border border-blue-100' if c.estado == 'Al Día' else '' }}">
-                                        {{ c.estado }}
-                                    </span>
-                                </td>
-                                <td class="py-4 text-right font-extrabold text-indigo-600">${{ "{:,.2f}".format(c.monto_pendiente) }}</td>
-                            </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td colspan="7" class="text-center py-12 text-gray-400 font-medium space-y-2">
-                                    <i class="fa-solid fa-circle-check text-3xl text-emerald-500 block mb-2"></i>
-                                    ¡Excelente! No hay clientes con cobros pendientes o en mora para los filtros seleccionados.
-                                </td>
-                            </tr>
-                        {% endif %}
+                        {% for c in cobranzas %}
+                        <tr class="hover:bg-gray-50/50 transition">
+                            <td class="py-4 font-bold text-gray-800">{{ c.cliente_nombre }}</td>
+                            <td class="py-4 text-xs text-gray-600">{{ c.telefono }}</td>
+                            <td class="py-4 text-xs font-semibold text-gray-700">
+                                <a href="{{ url_for('detalle_prestamo', id=c.prestamo_id) }}" class="text-indigo-600 hover:underline">#{{ c.prestamo_id }}</a>
+                            </td>
+                            <td class="py-4 text-xs text-gray-600">{{ c.vencimiento }}</td>
+                            <td class="py-4 text-xs font-bold text-red-600">{{ c.dias_atraso }} días</td>
+                            <td class="py-4">
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold 
+                                    {{ 'bg-amber-50 text-amber-700 border border-amber-100' if c.estado == 'Vence Hoy' else '' }}
+                                    {{ 'bg-red-50 text-red-700 border border-red-100' if c.estado == 'En Mora' else '' }}
+                                    {{ 'bg-blue-50 text-blue-700 border border-blue-100' if c.estado == 'Al Día' else '' }}">
+                                    {{ c.estado }}
+                                </span>
+                            </td>
+                            <td class="py-4 text-right font-extrabold text-indigo-600">${{ "{:,.2f}".format(c.monto_pendiente) }}</td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
+            {% else %}
+            <div class="text-center py-12 text-gray-400 font-medium space-y-2">
+                <i class="fa-solid fa-circle-check text-3xl text-emerald-500 block mb-2"></i>
+                ¡Excelente! No hay clientes con cobros pendientes o en mora para los filtros seleccionados.
+            </div>
+            {% endif %}
         </div>
 
     </div>
