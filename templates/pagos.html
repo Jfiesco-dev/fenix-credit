@@ -156,7 +156,49 @@
                 <h3 class="text-base font-extrabold text-gray-800">Historial General de Transacciones</h3>
             </div>
 
-            <div class="overflow-x-auto">
+            <!-- Vista de tarjetas para móvil -->
+            <div class="md:hidden space-y-3">
+                {% for pago in pagos %}
+                <div class="bg-slate-50 border border-gray-100 rounded-xl p-4">
+                    <div class="flex justify-between items-start gap-2">
+                        <span class="font-bold text-gray-800 text-sm">{{ pago.prestamo.cliente.nombre }}</span>
+                        <span class="font-extrabold text-emerald-600 text-sm shrink-0">${{ "{:,.2f}".format(pago.total_pago) }}</span>
+                    </div>
+                    <p class="text-xs font-semibold text-indigo-600 mt-1">{{ pago.concepto }}</p>
+                    <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 text-xs">
+                        <div>
+                            <span class="text-gray-400 font-bold block">Fecha Pago</span>
+                            <span class="text-gray-700 font-semibold">{{ pago.fecha }}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400 font-bold block">Vencimiento</span>
+                            <span class="text-gray-700 font-semibold">{{ pago.fecha_vencimiento }}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400 font-bold block">Capital</span>
+                            <span class="text-gray-700 font-semibold">${{ "{:,.2f}".format(pago.capital) }}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400 font-bold block">Interés</span>
+                            <span class="text-gray-700 font-semibold">${{ "{:,.2f}".format(pago.interes) }}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400 font-bold block">Mora</span>
+                            <span class="text-gray-700 font-semibold">${{ "{:,.2f}".format(pago.mora) }}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400 font-bold block">Creado por</span>
+                            <span class="text-gray-700 font-semibold">Admin</span>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-8 text-gray-400 font-medium text-sm">No hay pagos o abonos registrados todavía.</div>
+                {% endfor %}
+            </div>
+
+            <!-- Vista de tabla para escritorio -->
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left border-collapse text-sm">
                     <thead>
                         <tr class="border-b border-gray-100 text-xs font-bold text-gray-400 uppercase">
