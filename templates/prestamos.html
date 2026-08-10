@@ -221,12 +221,30 @@
         
         <form action="{{ url_for('nuevo_prestamo') }}" method="POST" autocomplete="off" class="space-y-4 text-xs">
             <div>
-                <label class="font-bold text-slate-600 block mb-1">Nombre del Cliente *</label>
-                <input type="text" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="nombre" placeholder="Ej. Juan Pérez" autocomplete="off" required>
+                <label class="font-bold text-slate-600 block mb-1">Cliente *</label>
+                <select id="select-cliente" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="cliente_id" onchange="toggleClienteNuevo()" required>
+                    <option value="" disabled selected>Selecciona un cliente...</option>
+                    {% for c in clientes %}
+                    <option value="{{ c.id }}">{{ c.nombre }} — {{ c.telefono }}</option>
+                    {% endfor %}
+                    <option value="nuevo">+ Registrar cliente nuevo</option>
+                </select>
+                <p class="text-[10px] text-gray-400 mt-1">Si la persona ya tiene otro crédito, selecciónala de la lista para no duplicarla.</p>
             </div>
-            <div>
-                <label class="font-bold text-slate-600 block mb-1">Teléfono *</label>
-                <input type="text" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="telefono" placeholder="Ej. 3001234567" autocomplete="off" required>
+
+            <div id="campos-cliente-nuevo" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-blue-50/50 border border-blue-100 rounded-xl">
+                <div class="sm:col-span-2">
+                    <label class="font-bold text-slate-600 block mb-1">Nombre del Cliente *</label>
+                    <input type="text" id="input-nombre-nuevo" class="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="nombre" placeholder="Ej. Juan Pérez" autocomplete="off">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-600 block mb-1">Teléfono *</label>
+                    <input type="text" id="input-telefono-nuevo" class="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="telefono" placeholder="Ej. 3001234567" autocomplete="off">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-600 block mb-1">Cédula</label>
+                    <input type="text" class="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-slate-700 focus:outline-none focus:border-blue-600" name="cedula" placeholder="Ej. 1023456789" autocomplete="off">
+                </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -419,10 +437,29 @@
         });
     }
 
+    function toggleClienteNuevo() {
+        const select = document.getElementById('select-cliente');
+        const campos = document.getElementById('campos-cliente-nuevo');
+        const inputNombre = document.getElementById('input-nombre-nuevo');
+        const inputTelefono = document.getElementById('input-telefono-nuevo');
+        const esNuevo = select.value === 'nuevo';
+
+        campos.classList.toggle('hidden', !esNuevo);
+        inputNombre.required = esNuevo;
+        inputTelefono.required = esNuevo;
+        if (!esNuevo) {
+            inputNombre.value = '';
+            inputTelefono.value = '';
+        }
+    }
+
     function abrirModal() {
         const modal = document.getElementById('modal-prestamo');
         const form = modal.querySelector('form');
         if (form) form.reset();
+
+        const campos = document.getElementById('campos-cliente-nuevo');
+        if (campos) campos.classList.add('hidden');
         
         const infoBox = document.getElementById('info-calculo-automatico');
         if (infoBox) infoBox.remove();
