@@ -9,7 +9,7 @@
 </head>
 <body class="bg-gray-50 font-sans flex h-screen overflow-hidden">
 
-<aside class="w-80 bg-slate-900 text-white flex flex-col justify-between hidden md:flex shadow-2xl z-20 shrink-0">
+<aside id="sidebar" class="w-80 bg-slate-900 text-white flex flex-col justify-between fixed inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 md:static transition-transform duration-300 ease-in-out shadow-2xl shrink-0">
     <div>
         <!-- Cabecera del Sidebar -->
         <div class="flex items-center gap-3.5 px-6 py-6 border-b border-slate-800">
@@ -71,17 +71,22 @@
 
     <!-- Contenido Principal -->
     <main class="flex-1 flex flex-col h-screen overflow-y-auto">
-        <header class="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center shadow-sm">
-            <h2 class="text-xl font-bold text-gray-800">Módulo de Préstamos</h2>
+        <header class="bg-white border-b border-gray-200 px-4 sm:px-8 py-4 flex justify-between items-center shadow-sm">
+            <div class="flex items-center gap-2">
+                <button id="menu-btn" class="md:hidden text-slate-600 hover:text-slate-900 focus:outline-none p-1 mr-1">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
+                <h2 class="text-lg sm:text-xl font-bold text-gray-800">Módulo de Préstamos</h2>
+            </div>
             <div class="flex items-center gap-3">
-                <span class="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-full border border-indigo-100">Versión Ilimitada Gratuita</span>
+                <span class="hidden sm:inline bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-full border border-indigo-100">Versión Ilimitada Gratuita</span>
                 <div class="w-9 h-9 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-sm">
                     <i class="fa-solid fa-user"></i>
                 </div>
             </div>
         </header>
 
-        <div class="p-8 max-w-7xl mx-auto w-full space-y-8">
+        <div class="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6 md:space-y-8">
 
             <!-- Alertas Flash -->
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -138,19 +143,49 @@
             </div>
 
             <!-- Tabla y Botón Nuevo Préstamo -->
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <div class="flex justify-between items-center mb-6">
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
                     <div>
                         <h3 class="text-lg font-bold text-gray-800">Préstamos Recientes</h3>
                         <p class="text-sm text-gray-400">Gestiona y monitorea los créditos otorgados</p>
                     </div>
-                    <button onclick="abrirModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm shadow-lg shadow-indigo-600/20 transition flex items-center gap-2">
+                    <button onclick="abrirModal()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm shadow-lg shadow-indigo-600/20 transition flex items-center justify-center gap-2">
                         <i class="fa-solid fa-plus"></i> Nuevo Préstamo
                     </button>
                 </div>
 
                 {% if prestamos %}
-                <div class="overflow-x-auto">
+                <!-- Vista de tarjetas para móvil -->
+                <div class="md:hidden space-y-3">
+                    {% for p in prestamos %}
+                    <a href="{{ url_for('detalle_prestamo', id=p.id) }}" class="block border border-gray-100 rounded-xl p-4 hover:bg-slate-50 transition">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <span class="text-indigo-600 font-bold text-sm">#{{ p.id }} · {{ p.cliente.nombre }}</span>
+                                <p class="text-xs text-gray-400 mt-0.5">{{ p.modalidad }} · Próx. pago: {{ p.proximo_pago }}</p>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-green-50 text-green-700 shrink-0">{{ p.estado }}</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-xs mt-3 pt-3 border-t border-gray-50">
+                            <div>
+                                <span class="block text-gray-400 text-[10px] uppercase font-bold">Capital</span>
+                                <span class="font-semibold text-gray-700">${{ "{:,.2f}".format(p.capital_inicial) }}</span>
+                            </div>
+                            <div>
+                                <span class="block text-gray-400 text-[10px] uppercase font-bold">Tasa</span>
+                                <span class="font-semibold text-gray-700">{{ p.tasa_interes }}%</span>
+                            </div>
+                            <div>
+                                <span class="block text-gray-400 text-[10px] uppercase font-bold">Cuotas</span>
+                                <span class="font-semibold text-gray-700">{{ p.cuotas_totales }}</span>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+
+                <!-- Vista de tabla para escritorio -->
+                <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="border-b border-gray-100 text-xs font-bold text-gray-400 uppercase">
@@ -260,6 +295,19 @@
     </div>
 
     <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const sidebar = document.getElementById('sidebar');
+        if (menuBtn && sidebar) {
+            menuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
+            });
+            window.addEventListener('click', (e) => {
+                if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && window.innerWidth < 768) {
+                    sidebar.classList.add('-translate-x-full');
+                }
+            });
+        }
+
         function abrirModal() {
             document.getElementById('modal-prestamo').classList.remove('hidden');
         }
