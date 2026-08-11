@@ -1036,8 +1036,84 @@ def borrar_pago(id):
 def cobranza():
     if 'user_id' not in session:
         return redirect(url_for('login'))
+
+    filtro_estado = request.args.get('filtro_estado', '')
+    fecha_filtro = request.args.get('fecha_filtro', '')
+
+    hoy_str = date.today().strftime('%Y-%m-%d')
     prestamos_activos = Prestamo.query.filter_by(estado='Activo').all()
-    return render_template('cobranza.html', prestamos=prestamos_activos)
+
+    cobranzas = []
+    cuotas_pagadas_total = 0
+    cuotas_pendientes_total = 0
+    al_dia = 0
+    en_mora = 0
+    vencen_hoy = 0
+
+    for p in prestamos_activos:
+        cuotas_pagadas_total += sum(1 for c in p.cuotas if c.estado == 'Pagada')
+        cuotas_pendientes = [c for c in p.cuotas if c.estado == 'Pendiente']
+        cuotas_pendientes_total += len(cuotas_pendientes)
+
+        if not cuotas_pendientes:
+            continue
+
+        proxima_cuota = min(cuotas_pendientes, key=lambda c: c.numero_cuota)
+        vencimiento = proxima_cuota.fecha_vencimiento
+
+        if vencimiento < hoy_str:
+            estado_cobro = 'En Mora'
+            dias_atraso = (datetime.strptime(hoy_str, '%Y-%m-%d') - datetime.strptime(vencimiento, '%Y-%m-%d')).days
+            en_mora += 1
+        elif vencimiento == hoy_str:
+            estado_cobro = 'Vence Hoy'
+            dias_atraso = 0
+            vencen_hoy += 1
+        else:
+            estado_cobro = 'Al Día'
+            dias_atraso = 0
+            al_dia += 1
+
+        monto_pendiente = sum(c.valor_cuota for c in cuotas_pendientes)
+
+        cobranzas.append({
+            'prestamo_id': p.id,
+            'cliente_nombre': p.cliente.nombre,
+            'telefono': p.cliente.telefono,
+            'vencimiento': vencimiento,
+            'dias_atraso': dias_atraso,
+            'estado': estado_cobro,
+            'monto_pendiente': monto_pendiente,
+        })
+
+    if filtro_estado == 'hoy':
+        cobranzas = [c for c in cobranzas if c['estado'] == 'Vence Hoy']
+    elif filtro_estado == 'mora':
+        cobranzas = [c for c in cobranzas if c['estado'] == 'En Mora']
+    elif filtro_estado == 'promesas':
+        cobranzas = []
+
+    if fecha_filtro:
+        cobranzas = [c for c in cobranzas if c['vencimiento'] == fecha_filtro]
+
+    cobranzas.sort(key=lambda c: c['vencimiento'])
+
+    total_cartera = len(prestamos_activos)
+    cumplidas = cuotas_pagadas_total
+    incumplidas = en_mora
+    total_cuotas_ref = cuotas_pagadas_total + cuotas_pendientes_total
+    cumplimiento = f"{round((cuotas_pagadas_total / total_cuotas_ref) * 100, 1)}%" if total_cuotas_ref > 0 else "0%"
+
+    return render_template(
+        'cobranza.html',
+        cobranzas=cobranzas,
+        total_cartera=total_cartera,
+        al_dia=al_dia,
+        cumplidas=cumplidas,
+        incumplidas=incumplidas,
+        vencen_hoy=vencen_hoy,
+        cumplimiento=cumplimiento,
+    )
 
 
 @app.route('/caja')
