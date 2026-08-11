@@ -78,8 +78,9 @@
             <a href="{{ url_for('prestamos') }}" class="text-gray-400 hover:text-gray-600 text-lg"><i class="fa-solid fa-arrow-left"></i></a>
             <h2 class="text-base sm:text-xl font-bold text-gray-800">Préstamo #{{ prestamo.id }}</h2>
         </div>
-        <div class="hidden sm:flex items-center gap-3">
-            <span class="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-full border border-indigo-100">Versión Ilimitada Gratuita</span>
+        <div class="flex items-center gap-3">
+            <span class="hidden sm:inline bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-full border border-indigo-100">Versión Ilimitada Gratuita</span>
+            {% include 'usuario.html' %}
         </div>
     </header>
 
