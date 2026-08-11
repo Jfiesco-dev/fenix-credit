@@ -2,9 +2,10 @@ from datetime import date, datetime, timedelta
 import os
 import random
 import requests
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, flash, redirect, render_template, request, session, url_for, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 import sqlalchemy
 
 app = Flask(__name__)
@@ -24,6 +25,14 @@ BREVO_SENDER_EMAIL = os.environ.get('BREVO_SENDER_EMAIL', os.environ.get('MAIL_U
 BREVO_SENDER_NAME = 'Fenix Credit'
 
 db = SQLAlchemy(app)
+
+
+@app.context_processor
+def inject_usuario_actual():
+    usuario_actual = None
+    if 'user_id' in session:
+        usuario_actual = db.session.get(Usuario, session['user_id'])
+    return dict(usuario_actual=usuario_actual)
 
 
 def enviar_correo(destinatario, asunto, cuerpo_texto):
@@ -65,6 +74,8 @@ class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
+    nombre = db.Column(db.String(120))
+    foto = db.Column(db.String(255))
 
 
 class Ruta(db.Model):
@@ -171,6 +182,20 @@ with app.app_context():
             if nombre_columna not in columnas_existentes:
                 conn.execute(sqlalchemy.text(f'ALTER TABLE cliente ADD COLUMN {nombre_columna} {tipo_sql}'))
                 conn.commit()
+
+        columnas_usuario_existentes = {fila[1] for fila in conn.execute(sqlalchemy.text("PRAGMA table_info(usuario)"))}
+        columnas_usuario_nuevas = {
+            'nombre': 'VARCHAR(120)',
+            'foto': 'VARCHAR(255)',
+        }
+        for nombre_columna, tipo_sql in columnas_usuario_nuevas.items():
+            if nombre_columna not in columnas_usuario_existentes:
+                conn.execute(sqlalchemy.text(f'ALTER TABLE usuario ADD COLUMN {nombre_columna} {tipo_sql}'))
+                conn.commit()
+
+CARPETA_FOTOS_PERFIL = os.path.join(basedir, 'static', 'uploads', 'perfil')
+os.makedirs(CARPETA_FOTOS_PERFIL, exist_ok=True)
+EXTENSIONES_FOTO_PERMITIDAS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 
 # ==========================================
@@ -306,6 +331,70 @@ def registro():
         return redirect(url_for('login'))
 
     return render_template('registro.html')
+
+
+@app.route('/logout')
+def logout():
+    session.pop('user_id', None)
+    flash('Sesión cerrada correctamente.', 'success')
+    return redirect(url_for('login'))
+
+
+def extension_permitida(nombre_archivo):
+    return '.' in nombre_archivo and nombre_archivo.rsplit('.', 1)[1].lower() in EXTENSIONES_FOTO_PERMITIDAS
+
+
+@app.route('/perfil/actualizar', methods=['POST'])
+def actualizar_perfil():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    usuario = db.session.get(Usuario, session['user_id'])
+    if not usuario:
+        return redirect(url_for('login'))
+
+    nombre = request.form.get('nombre', '').strip()
+    usuario.nombre = nombre
+
+    archivo = request.files.get('foto')
+    if archivo and archivo.filename and extension_permitida(archivo.filename):
+        extension = archivo.filename.rsplit('.', 1)[1].lower()
+        nombre_archivo = secure_filename(f'usuario_{usuario.id}.{extension}')
+        ruta_guardado = os.path.join(CARPETA_FOTOS_PERFIL, nombre_archivo)
+
+        if usuario.foto and usuario.foto != nombre_archivo:
+            ruta_anterior = os.path.join(CARPETA_FOTOS_PERFIL, usuario.foto)
+            if os.path.exists(ruta_anterior):
+                os.remove(ruta_anterior)
+
+        archivo.save(ruta_guardado)
+        usuario.foto = nombre_archivo
+
+    db.session.commit()
+    flash('Perfil actualizado correctamente.', 'success')
+    return redirect(request.referrer or url_for('dashboard'))
+
+
+@app.route('/perfil/eliminar_foto', methods=['POST'])
+def eliminar_foto_perfil():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    usuario = db.session.get(Usuario, session['user_id'])
+    if usuario and usuario.foto:
+        ruta_foto = os.path.join(CARPETA_FOTOS_PERFIL, usuario.foto)
+        if os.path.exists(ruta_foto):
+            os.remove(ruta_foto)
+        usuario.foto = None
+        db.session.commit()
+        flash('Foto de perfil eliminada.', 'success')
+
+    return redirect(request.referrer or url_for('dashboard'))
+
+
+@app.route('/static/uploads/perfil/<path:nombre_archivo>')
+def foto_perfil(nombre_archivo):
+    return send_from_directory(CARPETA_FOTOS_PERFIL, nombre_archivo)
 
 
 @app.route('/verificar-codigo', methods=['GET', 'POST'])
@@ -528,7 +617,7 @@ def nuevo_prestamo():
 
     cliente = None
     if cliente_id and cliente_id != 'nuevo':
-        cliente = Cliente.query.get(cliente_id)
+        cliente = db.session.get(Cliente, cliente_id)
 
     if not cliente and nombre and telefono:
         cliente = buscar_cliente_duplicado(nombre, telefono, cedula)
