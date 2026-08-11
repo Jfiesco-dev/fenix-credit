@@ -87,17 +87,15 @@
             <button id="menu-btn" class="md:hidden text-slate-600 hover:text-slate-900 focus:outline-none p-1 mr-1">
                 <i class="fa-solid fa-bars text-lg"></i>
             </button>
-            <h2 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-receipt mr-2 text-indigo-600"></i> Pagos Registrados</h2>
+            <h2 class="text-lg sm:text-xl font-bold text-gray-800"><i class="fa-solid fa-receipt mr-2 text-indigo-600"></i> Pagos Registrados</h2>
         </div>
         <div class="flex items-center gap-3">
-            <span class="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-2 rounded-xl border border-indigo-100">Versión Ilimitada Gratuita</span>
-            <div class="w-9 h-9 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-sm hidden sm:flex">
-                <i class="fa-solid fa-user"></i>
-            </div>
+            <span class="hidden sm:inline bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-2 rounded-xl border border-indigo-100">Versión Ilimitada Gratuita</span>
+            {% include 'usuario.html' %}
         </div>
     </header>
 
-    <div class="p-8 max-w-7xl mx-auto w-full space-y-6">
+    <div class="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6">
 
         <!-- Alertas flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -151,49 +149,30 @@
         </div>
 
         <!-- Tarjeta de Tabla de Pagos -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6 space-y-4">
             <div class="flex justify-between items-center pb-2 border-b border-gray-100">
                 <h3 class="text-base font-extrabold text-gray-800">Historial General de Transacciones</h3>
             </div>
 
+            {% if pagos %}
             <!-- Vista de tarjetas para móvil -->
             <div class="md:hidden space-y-3">
                 {% for pago in pagos %}
-                <div class="bg-slate-50 border border-gray-100 rounded-xl p-4">
-                    <div class="flex justify-between items-start gap-2">
-                        <span class="font-bold text-gray-800 text-sm">{{ pago.prestamo.cliente.nombre }}</span>
+                <div class="border border-gray-100 rounded-xl p-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold text-gray-800 text-sm">{{ pago.prestamo.cliente.nombre }}</p>
+                            <p class="text-[11px] text-indigo-600 font-semibold">{{ pago.concepto }}</p>
+                            <p class="text-xs text-gray-400 mt-0.5">Pagado: {{ pago.fecha }} · Vence: {{ pago.fecha_vencimiento }}</p>
+                        </div>
                         <span class="font-extrabold text-emerald-600 text-sm shrink-0">${{ "{:,.2f}".format(pago.total_pago) }}</span>
                     </div>
-                    <p class="text-xs font-semibold text-indigo-600 mt-1">{{ pago.concepto }}</p>
-                    <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 text-xs">
-                        <div>
-                            <span class="text-gray-400 font-bold block">Fecha Pago</span>
-                            <span class="text-gray-700 font-semibold">{{ pago.fecha }}</span>
-                        </div>
-                        <div>
-                            <span class="text-gray-400 font-bold block">Vencimiento</span>
-                            <span class="text-gray-700 font-semibold">{{ pago.fecha_vencimiento }}</span>
-                        </div>
-                        <div>
-                            <span class="text-gray-400 font-bold block">Capital</span>
-                            <span class="text-gray-700 font-semibold">${{ "{:,.2f}".format(pago.capital) }}</span>
-                        </div>
-                        <div>
-                            <span class="text-gray-400 font-bold block">Interés</span>
-                            <span class="text-gray-700 font-semibold">${{ "{:,.2f}".format(pago.interes) }}</span>
-                        </div>
-                        <div>
-                            <span class="text-gray-400 font-bold block">Mora</span>
-                            <span class="text-gray-700 font-semibold">${{ "{:,.2f}".format(pago.mora) }}</span>
-                        </div>
-                        <div>
-                            <span class="text-gray-400 font-bold block">Creado por</span>
-                            <span class="text-gray-700 font-semibold">Admin</span>
-                        </div>
+                    <div class="grid grid-cols-3 gap-2 text-xs mt-3 pt-3 border-t border-gray-50">
+                        <div><span class="block text-gray-400 text-[10px] uppercase font-bold">Capital</span><span class="text-gray-700">${{ "{:,.2f}".format(pago.capital) }}</span></div>
+                        <div><span class="block text-gray-400 text-[10px] uppercase font-bold">Interés</span><span class="text-gray-700">${{ "{:,.2f}".format(pago.interes) }}</span></div>
+                        <div><span class="block text-gray-400 text-[10px] uppercase font-bold">Mora</span><span class="text-gray-700">${{ "{:,.2f}".format(pago.mora) }}</span></div>
                     </div>
                 </div>
-                {% else %}
-                <div class="text-center py-8 text-gray-400 font-medium text-sm">No hay pagos o abonos registrados todavía.</div>
                 {% endfor %}
             </div>
 
@@ -226,14 +205,13 @@
                             <td class="py-3 text-gray-600">${{ "{:,.2f}".format(pago.mora) }}</td>
                             <td class="py-3 font-extrabold text-emerald-600 text-right">${{ "{:,.2f}".format(pago.total_pago) }}</td>
                         </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="9" class="text-center py-8 text-gray-400 font-medium">No hay pagos o abonos registrados todavía.</td>
-                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
+            {% else %}
+            <div class="text-center py-8 text-gray-400 font-medium">No hay pagos o abonos registrados todavía.</div>
+            {% endif %}
         </div>
 
     </div>
