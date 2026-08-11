@@ -87,9 +87,12 @@
             </button>
             <h2 class="text-base sm:text-xl font-bold text-gray-800"><i class="fa-solid fa-file-circle-plus mr-2 text-indigo-600"></i> Solicitudes de Préstamo</h2>
         </div>
-        <button onclick="copiarLink()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition flex items-center justify-center gap-2">
-            <i class="fa-solid fa-copy"></i> Copiar Link de Registro Público
-        </button>
+        <div class="flex items-center gap-2">
+            <button onclick="copiarLink()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-copy"></i> Copiar Link de Registro Público
+            </button>
+            {% include 'usuario.html' %}
+        </div>
     </header>
 
     <div class="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6">
