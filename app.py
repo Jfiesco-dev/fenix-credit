@@ -124,7 +124,7 @@ class Prestamo(db.Model):
     proximo_pago = db.Column(db.String(20), nullable=False)
     estado = db.Column(db.String(20), default='Activo')
     
-    cuotas = db.relationship('CuotaPrestamo', backref='prestamo', lazy=True, cascade="all, delete-orphan")
+    cuotas = db.relationship('CuotaPrestamo', backref='prestamo', lazy=True, cascade="all, delete-orphan", order_by="CuotaPrestamo.numero_cuota")
     pagos = db.relationship('Pago', backref='prestamo', lazy=True, cascade="all, delete-orphan")
 
 
@@ -425,11 +425,7 @@ def dashboard():
     
     total_interes_proyectado = 0.0
     for p in prestamos_activos_lista:
-        if p.tipo_amortizacion.upper() in ['CAPITAL AL FINAL', 'CAPITAL_FINAL']:
-            mult_meses = obtener_multiplicador_meses(p.modalidad)
-            total_interes_proyectado += (p.capital_inicial * (p.tasa_interes / 100.0) * mult_meses) * (p.cuotas_totales or 1)
-        else:
-            total_interes_proyectado += sum(c.interes_esperado for c in p.cuotas)
+        total_interes_proyectado += sum(c.interes_esperado for c in p.cuotas)
 
     hoy_str = date.today().strftime('%Y-%m-%d')
     
@@ -802,20 +798,32 @@ def detalle_prestamo(id):
     prestamo = Prestamo.query.get_or_404(id)
     mult_meses = obtener_multiplicador_meses(prestamo.modalidad)
 
-    if prestamo.tipo_amortizacion.upper() in ['CAPITAL AL FINAL', 'CAPITAL_FINAL']:
-        total_intereses_esperados = (prestamo.capital_inicial * (prestamo.tasa_interes / 100.0) * mult_meses) * (prestamo.cuotas_totales or 1)
-    else:
-        total_intereses_esperados = sum(c.interes_esperado for c in prestamo.cuotas)
+    # Intereses Acumulados Cobrados: suma de los intereses realmente pagados
+    # (historial de pagos), no un "total esperado" que no existe en créditos
+    # indefinidos (cuotas_totales = None / ∞), donde el interés se sigue
+    # generando cuota tras cuota sin un total fijo.
+    intereses_acumulados_cobrados = sum(p.interes for p in prestamo.pagos)
 
     total_abonado = sum(p.total_pago for p in prestamo.pagos)
-    saldo_total_pendiente = sum(c.capital_esperado for c in prestamo.cuotas if c.estado == 'Pendiente') + sum(c.interes_esperado for c in prestamo.cuotas if c.estado == 'Pendiente')
-    
+
+    # Saldo Total Pendiente = capital vigente + interés de la(s) cuota(s)
+    # pendiente(s), es decir, lo que realmente se debe pagar en este momento.
+    # En créditos indefinidos solo existe una cuota pendiente a la vez (se va
+    # generando cuota por cuota), así que esto ya refleja capital + interés
+    # del ciclo actual sin inventar un total infinito.
+    saldo_total_pendiente = prestamo.capital_actual + sum(
+        c.interes_esperado for c in prestamo.cuotas if c.estado == 'Pendiente'
+    )
+
+    cuota_pendiente_actual = next((c for c in prestamo.cuotas if c.estado == 'Pendiente'), None)
+
     return render_template(
         'detalle_prestamo.html', 
         prestamo=prestamo,
-        total_intereses=total_intereses_esperados,
+        total_intereses=intereses_acumulados_cobrados,
         total_abonado=total_abonado,
-        saldo_total_pendiente=saldo_total_pendiente
+        saldo_total_pendiente=saldo_total_pendiente,
+        cuota_pendiente_actual=cuota_pendiente_actual
     )
 
 
@@ -848,6 +856,22 @@ def registrar_abono(id):
         return redirect(url_for('detalle_prestamo', id=id))
 
     fecha_pago = request.form.get('fecha', date.today().strftime('%Y-%m-%d'))
+    modo_pago = request.form.get('modo', 'cuota')
+
+    cuota_pendiente = CuotaPrestamo.query.filter_by(prestamo_id=prestamo.id, estado='Pendiente').order_by(CuotaPrestamo.numero_cuota.asc()).first()
+
+    # Si el modo es "Pagar Cuota Actual", el pago SIEMPRE debe usar el
+    # capital/interés real calculado por el servidor para esa cuota (según el
+    # capital vigente en ese momento), sin importar qué valores haya
+    # pre-cargado o enviado el formulario. Esto evita que un abono a capital
+    # hecho el mismo día corrompa el monto de la cuota ordinaria siguiente.
+    # Este ajuste NO debe aplicarse en "Pagar Todo el Capital", porque ahí el
+    # total real a pagar es el saldo completo (capital + interés pendiente),
+    # no solo el valor de una cuota individual.
+    if cuota_pendiente and modo_pago == 'cuota':
+        capital_abonado = cuota_pendiente.capital_esperado or 0.0
+        interes_abonado = cuota_pendiente.interes_esperado or 0.0
+        total_pago = capital_abonado + interes_abonado + mora_abonada
     
     nuevo_pago = Pago(
         prestamo_id=prestamo.id,
@@ -863,14 +887,21 @@ def registrar_abono(id):
     
     if capital_abonado > 0:
         prestamo.capital_actual = max(0.0, prestamo.capital_actual - capital_abonado)
-        if prestamo.capital_actual == 0:
+        if prestamo.capital_actual <= 0:
             prestamo.estado = 'Pagado'
 
-    cuota_pendiente = CuotaPrestamo.query.filter_by(prestamo_id=prestamo.id, estado='Pendiente').order_by(CuotaPrestamo.numero_cuota.asc()).first()
-    
     if cuota_pendiente:
         cuota_pendiente.estado = 'Pagada'
-        
+
+    if prestamo.capital_actual <= 0:
+        # Deuda cancelada por completo: no tiene sentido avanzar la fecha de
+        # próximo pago ni generar una cuota nueva, porque ya no hay nada
+        # pendiente por cobrar.
+        db.session.commit()
+        flash('¡Deuda cancelada en su totalidad! El cliente quedó al día.', 'success')
+        return redirect(url_for('detalle_prestamo', id=prestamo.id))
+
+    if cuota_pendiente:
         f_actual = datetime.strptime(prestamo.proximo_pago, '%Y-%m-%d')
         mod = prestamo.modalidad.upper()
         
@@ -901,9 +932,12 @@ def registrar_abono(id):
             
         prestamo.proximo_pago = nueva_fecha.strftime('%Y-%m-%d')
 
-        es_capital_al_final = prestamo.tipo_amortizacion.upper() in ['CAPITAL AL FINAL', 'CAPITAL_FINAL']
+        # En créditos indefinidos (sin número de cuotas fijo) siempre se debe
+        # generar la siguiente cuota de interés, sin importar la etiqueta de
+        # tipo_amortizacion que tenga el préstamo (CAPITAL AL FINAL, cuota
+        # fija, etc.) — todos se cobran ciclo a ciclo de la misma forma.
         sin_cuotas_definidas = not prestamo.cuotas_totales or prestamo.cuotas_totales <= 0
-        if es_capital_al_final and sin_cuotas_definidas and prestamo.capital_actual > 0:
+        if sin_cuotas_definidas and prestamo.capital_actual > 0:
             multiplicador_meses = obtener_multiplicador_meses(prestamo.modalidad)
             i_tasa = (prestamo.tasa_interes / 100.0) * multiplicador_meses
             interes_periodico = prestamo.capital_actual * i_tasa
@@ -923,6 +957,168 @@ def registrar_abono(id):
     db.session.commit()
     flash('Pago registrado y ciclo de cobro actualizado correctamente.', 'success')
     return redirect(url_for('detalle_prestamo', id=prestamo.id))
+
+
+def regenerar_amortizacion_pendiente(prestamo, preservar_cuota_actual=False):
+    """Recalcula las cuotas pendientes de un préstamo (CUOTA_FIJA/FRANCESA,
+    CAPITAL AL FINAL o interés fijo, con o sin número de cuotas definido) en
+    base al capital_actual vigente, dejando intactas las cuotas ya pagadas.
+    Sirve tanto para incrementos de capital (ajustar capital) como para
+    abonos que lo reducen (abonar a capital).
+
+    Si preservar_cuota_actual=True, la cuota pendiente más próxima (la que
+    ya estaba en curso cuando se hizo el abono) NO se modifica, porque su
+    interés ya se generó sobre el capital vigente antes del abono. Solo las
+    cuotas futuras (aún no generadas) se recalculan sobre el nuevo capital."""
+    mult_meses = obtener_multiplicador_meses(prestamo.modalidad)
+    i_tasa = (prestamo.tasa_interes / 100.0) * mult_meses
+
+    cuotas_pagadas = [c for c in prestamo.cuotas if c.estado == 'Pagada']
+    cuotas_pendientes = sorted([c for c in prestamo.cuotas if c.estado == 'Pendiente'], key=lambda c: c.numero_cuota)
+    ultimo_numero_pagado = max([c.numero_cuota for c in cuotas_pagadas], default=0)
+
+    cuota_preservada = None
+    if preservar_cuota_actual and cuotas_pendientes:
+        cuota_preservada = cuotas_pendientes[0]
+        cuotas_pendientes = cuotas_pendientes[1:]
+        ultimo_numero_pagado = cuota_preservada.numero_cuota
+
+    fecha_base_str = cuota_preservada.fecha_vencimiento if cuota_preservada else (prestamo.proximo_pago or date.today().strftime('%Y-%m-%d'))
+    fecha_base = datetime.strptime(fecha_base_str, '%Y-%m-%d')
+
+    tipo = prestamo.tipo_amortizacion.upper()
+    sin_cuotas_definidas = not prestamo.cuotas_totales or prestamo.cuotas_totales <= 0
+
+    if prestamo.capital_actual <= 0:
+        for c in cuotas_pendientes:
+            db.session.delete(c)
+        return
+
+    if sin_cuotas_definidas:
+        interes_periodico = prestamo.capital_actual * i_tasa
+        if cuotas_pendientes:
+            cuota_actual = cuotas_pendientes[0]
+            cuota_actual.interes_esperado = round(interes_periodico, 2)
+            cuota_actual.valor_cuota = round(interes_periodico, 2)
+            cuota_actual.capital_esperado = 0.0
+        elif not cuota_preservada:
+            nueva_cuota = CuotaPrestamo(
+                prestamo_id=prestamo.id,
+                numero_cuota=ultimo_numero_pagado + 1,
+                fecha_vencimiento=fecha_base_str,
+                valor_cuota=round(interes_periodico, 2),
+                interes_esperado=round(interes_periodico, 2),
+                capital_esperado=0.0,
+                estado='Pendiente'
+            )
+            db.session.add(nueva_cuota)
+        # Si hay cuota_preservada y no quedan más pendientes, no se genera nada
+        # nuevo todavía: la siguiente cuota se creará al pagar la preservada,
+        # ya usando el capital_actual actualizado.
+        return
+
+    cuotas_restantes_cant = prestamo.cuotas_totales - len(cuotas_pagadas) - (1 if cuota_preservada else 0)
+    if cuotas_restantes_cant <= 0:
+        for c in cuotas_pendientes:
+            db.session.delete(c)
+        return
+
+    for c in cuotas_pendientes:
+        db.session.delete(c)
+
+    capital_a_amortizar = prestamo.capital_actual - (cuota_preservada.capital_esperado if cuota_preservada else 0.0)
+    if capital_a_amortizar < 0:
+        capital_a_amortizar = 0.0
+
+    if capital_a_amortizar <= 0:
+        return
+
+    if tipo in ['CUOTA_FIJA', 'FRANCESA']:
+        n = cuotas_restantes_cant
+        if i_tasa > 0:
+            val_cuota = capital_a_amortizar * (i_tasa * (1 + i_tasa) ** n) / ((1 + i_tasa) ** n - 1)
+        else:
+            val_cuota = capital_a_amortizar / n
+
+        capital_pendiente = capital_a_amortizar
+        for idx in range(1, n + 1):
+            c_num = ultimo_numero_pagado + idx
+            offset_fecha = 0 if cuota_preservada else 1
+            fecha_venc = fecha_base_str if (idx == 1 and not cuota_preservada) else calcular_fecha_vencimiento(fecha_base, idx - offset_fecha, prestamo.modalidad)
+
+            interes_esperado = capital_pendiente * i_tasa
+            capital_esperado = val_cuota - interes_esperado
+
+            if idx == n:
+                capital_esperado = capital_pendiente
+                val_cuota_final = capital_esperado + interes_esperado
+            else:
+                val_cuota_final = val_cuota
+
+            capital_pendiente -= capital_esperado
+
+            nueva_cuota = CuotaPrestamo(
+                prestamo_id=prestamo.id,
+                numero_cuota=c_num,
+                fecha_vencimiento=fecha_venc,
+                valor_cuota=round(val_cuota_final, 2),
+                interes_esperado=round(interes_esperado, 2),
+                capital_esperado=round(capital_esperado, 2),
+                estado='Pendiente'
+            )
+            db.session.add(nueva_cuota)
+
+    elif tipo in ['CAPITAL AL FINAL', 'CAPITAL_FINAL']:
+        n = cuotas_restantes_cant
+        interes_periodico = capital_a_amortizar * i_tasa
+
+        for idx in range(1, n + 1):
+            c_num = ultimo_numero_pagado + idx
+            offset_fecha = 0 if cuota_preservada else 1
+            fecha_venc = fecha_base_str if (idx == 1 and not cuota_preservada) else calcular_fecha_vencimiento(fecha_base, idx - offset_fecha, prestamo.modalidad)
+
+            if idx < n:
+                capital_esperado = 0.0
+                interes_esperado = interes_periodico
+                val_cuota = interes_periodico
+            else:
+                capital_esperado = capital_a_amortizar
+                interes_esperado = interes_periodico
+                val_cuota = capital_a_amortizar + interes_periodico
+
+            nueva_cuota = CuotaPrestamo(
+                prestamo_id=prestamo.id,
+                numero_cuota=c_num,
+                fecha_vencimiento=fecha_venc,
+                valor_cuota=round(val_cuota, 2),
+                interes_esperado=round(interes_esperado, 2),
+                capital_esperado=round(capital_esperado, 2),
+                estado='Pendiente'
+            )
+            db.session.add(nueva_cuota)
+
+    else:
+        n = cuotas_restantes_cant
+        interes_total_esperado = capital_a_amortizar * (prestamo.tasa_interes / 100.0)
+        cap_cuota = capital_a_amortizar / n
+        interes_por_cuota = interes_total_esperado / n
+        val_cuota_calculada = cap_cuota + interes_por_cuota
+
+        for idx in range(1, n + 1):
+            c_num = ultimo_numero_pagado + idx
+            offset_fecha = 0 if cuota_preservada else 1
+            fecha_venc = fecha_base_str if (idx == 1 and not cuota_preservada) else calcular_fecha_vencimiento(fecha_base, idx - offset_fecha, prestamo.modalidad)
+
+            nueva_cuota = CuotaPrestamo(
+                prestamo_id=prestamo.id,
+                numero_cuota=c_num,
+                fecha_vencimiento=fecha_venc,
+                valor_cuota=round(val_cuota_calculada, 2),
+                interes_esperado=round(interes_por_cuota, 2),
+                capital_esperado=round(cap_cuota, 2),
+                estado='Pendiente'
+            )
+            db.session.add(nueva_cuota)
 
 
 @app.route('/prestamo/<int:id>/ajustar_capital', methods=['POST'])
@@ -950,132 +1146,72 @@ def ajustar_capital(id):
     prestamo.capital_inicial += monto_adicional
     prestamo.capital_actual += monto_adicional
 
-    mult_meses = obtener_multiplicador_meses(prestamo.modalidad)
-    i_tasa = (prestamo.tasa_interes / 100.0) * mult_meses
-
-    cuotas_pagadas = [c for c in prestamo.cuotas if c.estado == 'Pagada']
-    cuotas_pendientes = [c for c in prestamo.cuotas if c.estado == 'Pendiente']
-    ultimo_numero_pagado = max([c.numero_cuota for c in cuotas_pagadas], default=0)
-
-    fecha_base_str = prestamo.proximo_pago or date.today().strftime('%Y-%m-%d')
-    fecha_base = datetime.strptime(fecha_base_str, '%Y-%m-%d')
-
-    tipo = prestamo.tipo_amortizacion.upper()
-    sin_cuotas_definidas = not prestamo.cuotas_totales or prestamo.cuotas_totales <= 0
-
-    if sin_cuotas_definidas:
-        interes_periodico = prestamo.capital_actual * i_tasa
-        if cuotas_pendientes:
-            cuota_actual = cuotas_pendientes[0]
-            cuota_actual.interes_esperado = round(interes_periodico, 2)
-            cuota_actual.valor_cuota = round(interes_periodico, 2)
-        else:
-            nueva_cuota = CuotaPrestamo(
-                prestamo_id=prestamo.id,
-                numero_cuota=ultimo_numero_pagado + 1,
-                fecha_vencimiento=fecha_base_str,
-                valor_cuota=round(interes_periodico, 2),
-                interes_esperado=round(interes_periodico, 2),
-                capital_esperado=0.0,
-                estado='Pendiente'
-            )
-            db.session.add(nueva_cuota)
-    else:
-        cuotas_restantes_cant = prestamo.cuotas_totales - len(cuotas_pagadas)
-        if cuotas_restantes_cant <= 0:
-            cuotas_restantes_cant = 1
-
-        for c in cuotas_pendientes:
-            db.session.delete(c)
-
-        capital_a_amortizar = prestamo.capital_actual
-
-        if tipo in ['CUOTA_FIJA', 'FRANCESA']:
-            n = cuotas_restantes_cant
-            if i_tasa > 0:
-                val_cuota = capital_a_amortizar * (i_tasa * (1 + i_tasa) ** n) / ((1 + i_tasa) ** n - 1)
-            else:
-                val_cuota = capital_a_amortizar / n
-
-            capital_pendiente = capital_a_amortizar
-            for idx in range(1, n + 1):
-                c_num = ultimo_numero_pagado + idx
-                fecha_venc = fecha_base_str if idx == 1 else calcular_fecha_vencimiento(fecha_base, idx - 1, prestamo.modalidad)
-
-                interes_esperado = capital_pendiente * i_tasa
-                capital_esperado = val_cuota - interes_esperado
-
-                if idx == n:
-                    capital_esperado = capital_pendiente
-                    val_cuota_final = capital_esperado + interes_esperado
-                else:
-                    val_cuota_final = val_cuota
-
-                capital_pendiente -= capital_esperado
-
-                nueva_cuota = CuotaPrestamo(
-                    prestamo_id=prestamo.id,
-                    numero_cuota=c_num,
-                    fecha_vencimiento=fecha_venc,
-                    valor_cuota=round(val_cuota_final, 2),
-                    interes_esperado=round(interes_esperado, 2),
-                    capital_esperado=round(capital_esperado, 2),
-                    estado='Pendiente'
-                )
-                db.session.add(nueva_cuota)
-
-        elif tipo in ['CAPITAL AL FINAL', 'CAPITAL_FINAL']:
-            n = cuotas_restantes_cant
-            interes_periodico = capital_a_amortizar * i_tasa
-
-            for idx in range(1, n + 1):
-                c_num = ultimo_numero_pagado + idx
-                fecha_venc = fecha_base_str if idx == 1 else calcular_fecha_vencimiento(fecha_base, idx - 1, prestamo.modalidad)
-
-                if idx < n:
-                    capital_esperado = 0.0
-                    interes_esperado = interes_periodico
-                    val_cuota = interes_periodico
-                else:
-                    capital_esperado = capital_a_amortizar
-                    interes_esperado = interes_periodico
-                    val_cuota = capital_a_amortizar + interes_periodico
-
-                nueva_cuota = CuotaPrestamo(
-                    prestamo_id=prestamo.id,
-                    numero_cuota=c_num,
-                    fecha_vencimiento=fecha_venc,
-                    valor_cuota=round(val_cuota, 2),
-                    interes_esperado=round(interes_esperado, 2),
-                    capital_esperado=round(capital_esperado, 2),
-                    estado='Pendiente'
-                )
-                db.session.add(nueva_cuota)
-
-        else:
-            n = cuotas_restantes_cant
-            interes_total_esperado = capital_a_amortizar * (prestamo.tasa_interes / 100.0)
-            cap_cuota = capital_a_amortizar / n
-            interes_por_cuota = interes_total_esperado / n
-            val_cuota_calculada = cap_cuota + interes_por_cuota
-
-            for idx in range(1, n + 1):
-                c_num = ultimo_numero_pagado + idx
-                fecha_venc = fecha_base_str if idx == 1 else calcular_fecha_vencimiento(fecha_base, idx - 1, prestamo.modalidad)
-
-                nueva_cuota = CuotaPrestamo(
-                    prestamo_id=prestamo.id,
-                    numero_cuota=c_num,
-                    fecha_vencimiento=fecha_venc,
-                    valor_cuota=round(val_cuota_calculada, 2),
-                    interes_esperado=round(interes_por_cuota, 2),
-                    capital_esperado=round(cap_cuota, 2),
-                    estado='Pendiente'
-                )
-                db.session.add(nueva_cuota)
+    # preservar_cuota_actual=False: la cuota pendiente en curso también se
+    # recalcula con el nuevo capital (más alto) tras el ajuste, para que la
+    # próxima cuota sugerida refleje el interés correcto sobre la deuda
+    # actual (p. ej. si el capital sube de $700,000 a $1,700,000 al 10%, la
+    # próxima cuota debe ser $170,000 y no seguir mostrando el interés
+    # calculado sobre el capital anterior).
+    regenerar_amortizacion_pendiente(prestamo, preservar_cuota_actual=False)
 
     db.session.commit()
     flash(f'Capital ajustado: se sumaron ${monto_adicional:,.2f} al préstamo y la amortización se recalculó automáticamente.', 'success')
+    return redirect(url_for('detalle_prestamo', id=prestamo.id))
+
+
+@app.route('/prestamo/<int:id>/abonar_capital', methods=['POST'])
+def abonar_capital(id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    prestamo = Prestamo.query.get_or_404(id)
+
+    if prestamo.estado != 'Activo':
+        flash('Solo se pueden registrar abonos a capital en préstamos activos.', 'error')
+        return redirect(url_for('detalle_prestamo', id=id))
+
+    try:
+        monto_raw = request.form.get('monto_abono')
+        monto_abono = float(monto_raw) if monto_raw and monto_raw.strip() != '' else 0.0
+    except ValueError:
+        flash('El monto del abono debe ser un valor numérico válido.', 'error')
+        return redirect(url_for('detalle_prestamo', id=id))
+
+    if monto_abono <= 0:
+        flash('El monto del abono a capital debe ser mayor a cero.', 'error')
+        return redirect(url_for('detalle_prestamo', id=id))
+
+    if monto_abono > prestamo.capital_actual:
+        monto_abono = prestamo.capital_actual
+
+    fecha_pago = request.form.get('fecha', date.today().strftime('%Y-%m-%d'))
+
+    nuevo_pago = Pago(
+        prestamo_id=prestamo.id,
+        concepto='ABONO A CAPITAL',
+        fecha=fecha_pago,
+        fecha_vencimiento=prestamo.proximo_pago,
+        total_pago=monto_abono,
+        capital=monto_abono,
+        interes=0.0,
+        mora=0.0
+    )
+    db.session.add(nuevo_pago)
+
+    prestamo.capital_actual = max(0.0, prestamo.capital_actual - monto_abono)
+
+    if prestamo.capital_actual <= 0:
+        prestamo.estado = 'Pagado'
+
+    # preservar_cuota_actual=False: la cuota pendiente en curso también debe
+    # recalcularse con el nuevo capital (más bajo) tras el abono, para que el
+    # próximo pago de cuota refleje el interés correcto (p. ej. si el capital
+    # baja de $1,000,000 a $300,000 al 10%, la próxima cuota debe ser $30,000
+    # y no seguir mostrando el interés calculado sobre el capital anterior).
+    regenerar_amortizacion_pendiente(prestamo, preservar_cuota_actual=False)
+
+    db.session.commit()
+    flash(f'Abono a capital de ${monto_abono:,.2f} registrado. La amortización se recalculó automáticamente.', 'success')
     return redirect(url_for('detalle_prestamo', id=prestamo.id))
 
 
