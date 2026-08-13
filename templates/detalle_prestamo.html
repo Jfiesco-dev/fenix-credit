@@ -171,7 +171,7 @@
                         <span class="font-bold text-gray-800">${{ "{:,.2f}".format(prestamo.capital_inicial) }}</span>
                     </div>
                     <div class="flex justify-between text-sm py-1.5 border-b border-gray-50">
-                        <span class="text-gray-500">Total Intereses Esperados:</span>
+                        <span class="text-gray-500">Intereses Acumulados Cobrados:</span>
                         <span class="font-bold text-gray-800">${{ "{:,.2f}".format(total_intereses) }}</span>
                     </div>
                     <div class="flex justify-between text-sm py-1.5 border-b border-gray-50">
@@ -180,7 +180,7 @@
                     </div>
                     <div class="flex justify-between text-sm py-1.5 border-b border-gray-50">
                         <span class="text-gray-500">Saldo Total Pendiente:</span>
-                        <span class="font-bold text-indigo-600">${{ "{:,.2f}".format((prestamo.capital_inicial + total_intereses) - total_abonado) }}</span>
+                        <span class="font-bold text-indigo-600">${{ "{:,.2f}".format(saldo_total_pendiente) }}</span>
                     </div>
                 </div>
             </div>
@@ -311,7 +311,7 @@
         </div>
         
         <!-- Botones de Selección Rápida -->
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-3 gap-3">
             <button type="button" onclick="seleccionarOpcionPago('cuota')" id="btn-opcion-cuota" class="p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold text-xs flex flex-col items-center justify-center gap-1 transition shadow-xs">
                 <i class="fa-solid fa-calendar-check text-base"></i>
                 Pagar Cuota Actual
@@ -319,6 +319,10 @@
             <button type="button" onclick="seleccionarOpcionPago('todo')" id="btn-opcion-todo" class="p-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-600 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-gray-300">
                 <i class="fa-solid fa-bolt text-base"></i>
                 Pagar Todo el Capital
+            </button>
+            <button type="button" onclick="seleccionarOpcionPago('capital')" id="btn-opcion-capital" class="p-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-600 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-gray-300">
+                <i class="fa-solid fa-piggy-bank text-base"></i>
+                Abonar a Capital
             </button>
         </div>
 
@@ -330,19 +334,24 @@
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Total a Pagar ($)</label>
-                    <input type="number" step="any" name="total_pago" id="total_pago" readonly required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm font-bold text-emerald-600 focus:outline-none" placeholder="0.00">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1" id="label-total-pago">Total a Pagar ($)</label>
+                    <input type="number" step="any" min="0.01" name="total_pago" id="total_pago" readonly required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm font-bold text-emerald-600 focus:outline-none" placeholder="0.00">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha de Pago (Editable)</label>
                     <input type="date" name="fecha" id="input-fecha" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-indigo-600 bg-white cursor-pointer">
                 </div>
             </div>
+            <p id="ayuda-abono-capital" class="hidden text-xs text-gray-400 -mt-2">
+                Este monto se descuenta directamente del capital. Las cuotas e intereses pendientes se recalculan automáticamente.
+            </p>
 
             <!-- Campos Ocultos para desglose interno -->
             <input type="hidden" id="input-capital" name="capital" value="0">
             <input type="hidden" id="input-interes" name="interes" value="0">
             <input type="hidden" id="input-mora" name="mora" value="0">
+            <input type="hidden" id="input-monto-abono" name="monto_abono" value="0">
+            <input type="hidden" id="input-modo" name="modo" value="cuota">
 
             <div class="flex justify-end gap-3 pt-4 border-t">
                 <button type="button" onclick="toggleModalAbono()" class="px-4 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-100 transition">Cancelar</button>
@@ -488,19 +497,34 @@
 
     // Variables dinámicas inyectadas desde Flask
     const pagosRealizados = Number('{{ prestamo.pagos|length if prestamo.pagos else 0 }}');
-    const proximaCuotaNum = pagosRealizados + 1;
     const totalCuotasSistema = parseInt('{{ prestamo.cuotas_totales or 0 }}');
-    
-    // Obtener exactamente la fecha de vencimiento de la cuota actual pendiente desde el ciclo de cuotas
-    const fechaCuotaPendienteExacta = "{% if prestamo.cuotas and prestamo.cuotas|length > prestamo.pagos|length %}{{ prestamo.cuotas[prestamo.pagos|length].fecha_vencimiento }}{% else %}{{ prestamo.proximo_pago }}{% endif %}";
-    
-    // Valores numéricos exactos de las cuotas y totales pendientes
-    const valorCuotaPendiente = Number('{{ prestamo.cuotas[prestamo.pagos|length].valor_cuota if prestamo.cuotas and prestamo.cuotas|length > prestamo.pagos|length else (prestamo.cuotas[0].valor_cuota if prestamo.cuotas and prestamo.cuotas|length > 0 else prestamo.capital_actual) }}');
-    const capitalCuotaPendiente = Number('{{ prestamo.cuotas[prestamo.pagos|length].capital_esperado if prestamo.cuotas and prestamo.cuotas|length > prestamo.pagos|length else prestamo.capital_actual }}');
-    const interesCuotaPendiente = Number('{{ prestamo.cuotas[prestamo.pagos|length].interes_esperado if prestamo.cuotas and prestamo.cuotas|length > prestamo.pagos|length else 0 }}');
-    
-    // Saldo Total Pendiente (Capital Inicial + Total Intereses - Total Abonado)
-    const saldoTotalPendiente = Number('{{ (prestamo.capital_inicial + total_intereses) - total_abonado }}');
+
+    // La cuota pendiente actual viene calculada por el backend (no se infiere
+    // contando pagos, porque un "Abono a Capital" también cuenta como pago
+    // pero NO marca una cuota como pagada, lo que desalineaba el número de
+    // cuota y el valor mostrado en el modal).
+    const proximaCuotaNum = {{ cuota_pendiente_actual.numero_cuota if cuota_pendiente_actual else (prestamo.pagos|length + 1) }};
+
+    // Obtener exactamente la fecha de vencimiento de la cuota actual pendiente
+    const fechaCuotaPendienteExacta = "{{ cuota_pendiente_actual.fecha_vencimiento if cuota_pendiente_actual else prestamo.proximo_pago }}";
+
+    // Valores numéricos exactos de la cuota pendiente actual
+    const valorCuotaPendiente = Number('{{ cuota_pendiente_actual.valor_cuota if cuota_pendiente_actual else prestamo.capital_actual }}');
+    const capitalCuotaPendiente = Number('{{ cuota_pendiente_actual.capital_esperado if cuota_pendiente_actual else prestamo.capital_actual }}');
+    const interesCuotaPendiente = Number('{{ cuota_pendiente_actual.interes_esperado if cuota_pendiente_actual else 0 }}');
+
+    // Saldo Total Pendiente calculado por el backend (capital_actual si el
+    // crédito es indefinido, o capital_actual + intereses pendientes si tiene
+    // un número de cuotas fijo)
+    const saldoTotalPendiente = Number('{{ saldo_total_pendiente or 0 }}');
+    const capitalActualSistema = Number('{{ prestamo.capital_actual or 0 }}');
+
+    // URLs de los distintos endpoints de registro de pago
+    const urlRegistrarAbono = "{{ url_for('registrar_abono', id=prestamo.id) }}";
+    const urlAbonarCapital = "{{ url_for('abonar_capital', id=prestamo.id) }}";
+
+    // Modo de pago actualmente seleccionado en el modal ('cuota' | 'todo' | 'capital')
+    let modoPagoActual = 'cuota';
 
     function toggleModalAjustarCapital() {
         const modal = document.getElementById('modalAjustarCapital');
@@ -533,32 +557,84 @@
     function seleccionarOpcionPago(tipo) {
         const btnCuota = document.getElementById('btn-opcion-cuota');
         const btnTodo = document.getElementById('btn-opcion-todo');
+        const btnCapital = document.getElementById('btn-opcion-capital');
         const inputConcepto = document.getElementById('input-concepto');
         const inputTotal = document.getElementById('total_pago');
         const inputCapital = document.getElementById('input-capital');
         const inputInteres = document.getElementById('input-interes');
         const inputFecha = document.getElementById('input-fecha');
+        const inputModo = document.getElementById('input-modo');
+        const labelTotal = document.getElementById('label-total-pago');
+        const ayudaAbonoCapital = document.getElementById('ayuda-abono-capital');
+        const form = document.getElementById('form-registrar-pago');
+
+        modoPagoActual = tipo;
+        if (inputModo) {
+            inputModo.value = tipo;
+        }
+
+        const claseActiva = "p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold text-xs flex flex-col items-center justify-center gap-1 transition shadow-xs";
+        const claseInactiva = "p-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-600 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-gray-300";
 
         // Asignar automáticamente la fecha exacta de la cuota o la del sistema con formato correcto YYYY-MM-DD
         if (inputFecha) {
             inputFecha.value = fechaCuotaPendienteExacta;
         }
 
+        btnCuota.className = claseInactiva;
+        btnTodo.className = claseInactiva;
+        btnCapital.className = claseInactiva;
+
         if (tipo === 'cuota') {
-            btnCuota.className = "p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold text-xs flex flex-col items-center justify-center gap-1 transition shadow-xs";
-            btnTodo.className = "p-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-600 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-gray-300";
-            
+            btnCuota.className = claseActiva;
+            form.action = urlRegistrarAbono;
+
+            labelTotal.innerText = "Total a Pagar ($)";
+            ayudaAbonoCapital.classList.add('hidden');
+            inputTotal.readOnly = true;
+            inputTotal.classList.add('bg-gray-100');
+            inputTotal.classList.remove('bg-white');
+
             inputConcepto.value = `PAGO CUOTA #${proximaCuotaNum}`;
             inputTotal.value = valorCuotaPendiente.toFixed(2);
             inputCapital.value = capitalCuotaPendiente.toFixed(2);
             inputInteres.value = interesCuotaPendiente.toFixed(2);
-        } else {
-            btnTodo.className = "p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold text-xs flex flex-col items-center justify-center gap-1 transition shadow-xs";
-            btnCuota.className = "p-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-600 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-gray-300";
-            
+        } else if (tipo === 'todo') {
+            btnTodo.className = claseActiva;
+            form.action = urlRegistrarAbono;
+
+            labelTotal.innerText = "Total a Pagar ($)";
+            ayudaAbonoCapital.classList.add('hidden');
+            inputTotal.readOnly = true;
+            inputTotal.classList.add('bg-gray-100');
+            inputTotal.classList.remove('bg-white');
+
+            // El total a pagar es el saldo completo, pero el desglose real
+            // debe separar capital (lo que baja la deuda) del interés
+            // pendiente de la cuota en curso; de lo contrario el backend
+            // registraba todo como "capital" y el interés acumulado
+            // cobrado quedaba mal contabilizado.
+            const interesPendienteTotal = Math.max(0, saldoTotalPendiente - capitalActualSistema);
             inputConcepto.value = "CANCELACIÓN TOTAL DE LA DEUDA";
             inputTotal.value = saldoTotalPendiente.toFixed(2);
-            inputCapital.value = saldoTotalPendiente.toFixed(2);
+            inputCapital.value = capitalActualSistema.toFixed(2);
+            inputInteres.value = interesPendienteTotal.toFixed(2);
+        } else {
+            // Abonar a Capital
+            btnCapital.className = claseActiva;
+            form.action = urlAbonarCapital;
+
+            labelTotal.innerText = "Monto a Abonar a Capital ($)";
+            ayudaAbonoCapital.classList.remove('hidden');
+            inputTotal.readOnly = false;
+            inputTotal.classList.remove('bg-gray-100');
+            inputTotal.classList.add('bg-white');
+            inputTotal.max = capitalActualSistema;
+            inputTotal.focus();
+
+            inputConcepto.value = "ABONO A CAPITAL";
+            inputTotal.value = "";
+            inputCapital.value = "0.00";
             inputInteres.value = "0.00";
         }
     }
@@ -594,6 +670,46 @@
         const horaFormateada = fechaActualObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
         const clienteNombre = "{{ prestamo.cliente.nombre }}";
+
+        // --- Flujo separado para "Abonar a Capital" ---
+        if (modoPagoActual === 'capital') {
+            let montoAbono = parseFloat(document.getElementById('total_pago').value) || 0;
+
+            if (montoAbono <= 0) {
+                alert('Ingresa un monto válido para abonar a capital.');
+                return;
+            }
+            if (montoAbono > capitalActualSistema) {
+                montoAbono = capitalActualSistema;
+                document.getElementById('total_pago').value = montoAbono.toFixed(2);
+            }
+
+            document.getElementById('input-monto-abono').value = montoAbono;
+            document.getElementById('input-capital').value = montoAbono;
+            document.getElementById('input-interes').value = 0;
+
+            const nuevoCapitalRestante = Math.max(0, capitalActualSistema - montoAbono);
+            const nuevoSaldoPendienteCapital = Math.max(0, saldoTotalPendiente - montoAbono);
+
+            document.getElementById('recibo-n').innerText = Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('recibo-f').innerText = fechaFormateada;
+            document.getElementById('recibo-h').innerText = horaFormateada;
+            document.getElementById('recibo-gen-pie').innerText = `${fechaFormateada} ${horaFormateada}`;
+            document.getElementById('recibo-c').innerText = clienteNombre;
+            document.getElementById('recibo-cp').innerText = concepto;
+            document.getElementById('recibo-vencimiento').innerText = fechaInput || fechaCuotaPendienteExacta;
+
+            const moneda = (val) => '$' + Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+            document.getElementById('recibo-tot').innerText = moneda(montoAbono);
+            document.getElementById('recibo-saldo').innerText = moneda(nuevoSaldoPendienteCapital);
+            document.getElementById('recibo-pagadas').innerText = `${pagosRealizados} / ${totalCuotasSistema || '∞'}`;
+            document.getElementById('recibo-pendientes').innerText = nuevoCapitalRestante > 0 ? 'Amortización recalculada' : 0;
+
+            document.getElementById('modalAbono').classList.add('hidden');
+            document.getElementById('modal-recibo-legal').classList.remove('hidden');
+            return;
+        }
+
         let total = parseFloat(document.getElementById('total_pago').value) || 0;
         let capital = parseFloat(document.getElementById('input-capital').value) || 0;
         let interes = parseFloat(document.getElementById('input-interes').value) || 0;
@@ -608,11 +724,7 @@
             document.getElementById('total_pago').value = total;
         }
 
-        const capitalInicialSistema = Number('{{ prestamo.capital_inicial or 0 }}');
-        const totalInteresesSistema = Number('{{ total_intereses or 0 }}');
-        const totalAbonadoSistema = Number('{{ total_abonado or 0 }}');
-        
-        let saldoTotalPendienteActual = (capitalInicialSistema + totalInteresesSistema) - totalAbonadoSistema;
+        let saldoTotalPendienteActual = saldoTotalPendiente;
         let nuevoSaldoPendiente = saldoTotalPendienteActual - total;
         if (nuevoSaldoPendiente < 0) nuevoSaldoPendiente = 0;
 
