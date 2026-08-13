@@ -466,6 +466,61 @@
         });
     }
 
+    // --- Autocompletar Fecha del Próximo Pago según la Modalidad ---
+    let fechaProximoPagoEditadaManualmente = false;
+
+    function calcularFechaSugeridaProximoPago(modalidad) {
+        const hoy = new Date();
+        const base = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+        let resultado;
+
+        if (modalidad === 'DIARIO') {
+            resultado = new Date(base);
+            resultado.setDate(resultado.getDate() + 1);
+        } else if (modalidad === 'SEMANAL') {
+            resultado = new Date(base);
+            resultado.setDate(resultado.getDate() + 7);
+        } else if (modalidad === 'QUINCENAL') {
+            resultado = new Date(base);
+            resultado.setDate(resultado.getDate() + 15);
+        } else {
+            let mesesASumar = 1;
+            if (modalidad === 'BIMESTRAL') mesesASumar = 2;
+            else if (modalidad === 'TRIMESTRAL') mesesASumar = 3;
+
+            const mesesTotales = base.getMonth() + mesesASumar;
+            const anio = base.getFullYear() + Math.floor(mesesTotales / 12);
+            const mes = ((mesesTotales % 12) + 12) % 12;
+            const ultimoDiaMes = new Date(anio, mes + 1, 0).getDate();
+            const dia = Math.min(base.getDate(), ultimoDiaMes);
+            resultado = new Date(anio, mes, dia);
+        }
+
+        const yyyy = resultado.getFullYear();
+        const mm = String(resultado.getMonth() + 1).padStart(2, '0');
+        const dd = String(resultado.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function autocompletarFechaProximoPago() {
+        const modalidadSelect = document.querySelector('#modal-prestamo select[name="modalidad"]');
+        const fechaInput = document.querySelector('#modal-prestamo input[name="proximo_pago"]');
+        if (!modalidadSelect || !fechaInput || fechaProximoPagoEditadaManualmente) return;
+        fechaInput.value = calcularFechaSugeridaProximoPago(modalidadSelect.value);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const modalidadSelect = document.querySelector('#modal-prestamo select[name="modalidad"]');
+        const fechaInput = document.querySelector('#modal-prestamo input[name="proximo_pago"]');
+
+        if (modalidadSelect) {
+            modalidadSelect.addEventListener('change', autocompletarFechaProximoPago);
+        }
+        if (fechaInput) {
+            fechaInput.addEventListener('input', () => { fechaProximoPagoEditadaManualmente = true; });
+        }
+    });
+
     function toggleClienteNuevo() {
         const select = document.getElementById('select-cliente');
         const campos = document.getElementById('campos-cliente-nuevo');
@@ -495,6 +550,9 @@
 
         modal.classList.remove('hidden');
         modal.classList.add('flex');
+
+        fechaProximoPagoEditadaManualmente = false;
+        autocompletarFechaProximoPago();
     }
     
     function cerrarModal() {
