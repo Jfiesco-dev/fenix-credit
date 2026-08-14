@@ -11,6 +11,8 @@ import sqlalchemy
 app = Flask(__name__)
 # Configuración segura de clave secreta y credenciales de correo
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'clave_secreta_super_segura')
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=365)
+app.config['SESSION_PERMANENT'] = True
 
 # Ajuste seguro de la ruta de la base de datos
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -293,6 +295,7 @@ def login():
         user = Usuario.query.filter_by(email=email).first()
 
         if user and check_password_hash(user.password, password):
+            session.permanent = True
             session['user_id'] = user.id
             return redirect(url_for('dashboard'))
         flash('Correo o contraseña incorrectos.', 'error')
