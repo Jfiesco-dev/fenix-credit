@@ -7,6 +7,8 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 import sqlalchemy
+# NOTA: si usas PostgreSQL (DATABASE_URL) en Render, agrega "psycopg2-binary"
+# a tu requirements.txt, si no, el despliegue fallará al conectar.
 
 app = Flask(__name__)
 # Configuración segura de clave secreta y credenciales de correo
@@ -15,8 +17,21 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=365)
 app.config['SESSION_PERMANENT'] = True
 
 # Ajuste seguro de la ruta de la base de datos
+# IMPORTANTE: En Render (y en la mayoría de hostings), el disco local es EFEMERO.
+# Si usas SQLite en el filesystem local, la base de datos se borra cada vez que
+# el servicio se reinicia o se re-despliega, por eso los usuarios "desaparecen".
+# Para que los datos queden guardados para siempre, debes crear una base de datos
+# PostgreSQL en Render (gratis) y copiar su "Internal Database URL" en la variable
+# de entorno DATABASE_URL del servicio web. Si esa variable existe, se usa Postgres
+# (persistente). Si no existe (por ejemplo en tu máquina local), se usa SQLite.
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'prestamos.db')
+database_url = os.environ.get('DATABASE_URL')
+if database_url:
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'prestamos.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # ==========================================
@@ -172,24 +187,27 @@ class SolicitudPrestamo(db.Model):
 with app.app_context():
     db.create_all()
 
+    inspector = sqlalchemy.inspect(db.engine)
+
+    columnas_existentes = {col['name'] for col in inspector.get_columns('cliente')}
+    columnas_nuevas = {
+        'cedula': 'VARCHAR(30)',
+        'direccion': 'VARCHAR(255)',
+        'ocupacion': 'VARCHAR(120)',
+        'fecha_nacimiento': 'VARCHAR(20)',
+    }
     with db.engine.connect() as conn:
-        columnas_existentes = {fila[1] for fila in conn.execute(sqlalchemy.text("PRAGMA table_info(cliente)"))}
-        columnas_nuevas = {
-            'cedula': 'VARCHAR(30)',
-            'direccion': 'VARCHAR(255)',
-            'ocupacion': 'VARCHAR(120)',
-            'fecha_nacimiento': 'VARCHAR(20)',
-        }
         for nombre_columna, tipo_sql in columnas_nuevas.items():
             if nombre_columna not in columnas_existentes:
                 conn.execute(sqlalchemy.text(f'ALTER TABLE cliente ADD COLUMN {nombre_columna} {tipo_sql}'))
                 conn.commit()
 
-        columnas_usuario_existentes = {fila[1] for fila in conn.execute(sqlalchemy.text("PRAGMA table_info(usuario)"))}
-        columnas_usuario_nuevas = {
-            'nombre': 'VARCHAR(120)',
-            'foto': 'VARCHAR(255)',
-        }
+    columnas_usuario_existentes = {col['name'] for col in inspector.get_columns('usuario')}
+    columnas_usuario_nuevas = {
+        'nombre': 'VARCHAR(120)',
+        'foto': 'VARCHAR(255)',
+    }
+    with db.engine.connect() as conn:
         for nombre_columna, tipo_sql in columnas_usuario_nuevas.items():
             if nombre_columna not in columnas_usuario_existentes:
                 conn.execute(sqlalchemy.text(f'ALTER TABLE usuario ADD COLUMN {nombre_columna} {tipo_sql}'))
